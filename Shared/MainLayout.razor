@@ -1,0 +1,28 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Nav
+
+<div class="app-shell">
+    <NavMenu />
+    <div class="app-content">
+        <header class="app-header">
+            <button class="sidebar-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="header-right">
+                <div class="header-date d-none d-md-flex">
+                    <i class="bi bi-calendar3"></i>
+                    @DateTime.Now.ToString("dd MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))
+                </div>
+                <div class="header-avatar" title="Yönetici">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+            </div>
+        </header>
+        <main class="app-main">
+            @Body
+        </main>
+        <footer class="app-footer">
+            © @DateTime.Now.Year <strong>Ascar Servis</strong> — Oto Sanayi Takip Sistemi
+        </footer>
+    </div>
+</div>

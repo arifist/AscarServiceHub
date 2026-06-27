@@ -1,0 +1,620 @@
+@page "/service-records/{Id:int}"
+@inject JsonDataStore Store
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Servis Detay @_record?.RecordNumber — Ascar Servis</PageTitle>
+
+@if (_record == null)
+{
+    <div class="loading-spinner"><div class="spinner-border text-accent" role="status"></div></div>
+}
+else
+{
+    <div class="page-header">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                <a href="/service-records" class="btn btn-light-sm btn-sm"><i class="bi bi-arrow-left"></i></a>
+                <span class="record-number" style="font-size:14px">@_record.RecordNumber</span>
+                @StatusBadge(_record.Status)
+                @PriorityBadge(_record.Priority)
+                @if (_record.HasInsurance)
+                {
+                    <span class="badge-status" style="background:#d1fae5;color:#065f46">
+                        <i class="bi bi-shield-check"></i> @_record.InsuranceCompany
+                    </span>
+                }
+            </div>
+            <h1 class="page-title">@_record.Vehicle?.Brand @_record.Vehicle?.Model</h1>
+            <p class="page-subtitle">
+                @_record.Vehicle?.Plate • @_record.Vehicle?.Customer?.FullName •
+                Giriş: @_record.EntryDate.ToString("dd.MM.yyyy") •
+                @_record.DaysInWorkshop gün
+                @if (_record.EstimatedDeliveryDate.HasValue)
+                {
+                    var overdue = _record.EstimatedDeliveryDate.Value < DateTime.Now && _record.Status != ServiceStatus.Delivered;
+                    <span class="@(overdue ? "text-danger fw-700" : "")">
+                        • Teslim: @_record.EstimatedDeliveryDate.Value.ToString("dd.MM.yyyy")
+                        @if (overdue) { <span>(GECİKTİ)</span> }
+                    </span>
+                }
+            </p>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-light-sm" @onclick="PrintRecord">
+                <i class="bi bi-printer me-1"></i> Yazdır
+            </button>
+        </div>
+    </div>
+
+    <!-- Status Pipeline -->
+    <div class="card mb-3">
+        <div class="card-body py-3">
+            <div class="status-steps">
+                @foreach (var (step, label, icon) in Steps())
+                {
+                    <div class="status-step">
+                        <div class="step-dot @StepCss(step)">
+                            <i class="bi @icon" style="font-size:10px"></i>
+                        </div>
+                        <div class="step-label @StepCss(step)">@label</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Left Column -->
+        <div class="col-12 col-lg-8">
+
+            <!-- Müşteri Şikayeti -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-chat-left-text text-accent"></i> Müşteri Şikayeti</div>
+                    @if (!_editingComplaint)
+                    {
+                        <button class="btn btn-light-sm btn-sm" @onclick="@(() => _editingComplaint = true)">
+                            <i class="bi bi-pencil me-1"></i> Düzenle
+                        </button>
+                    }
+                </div>
+                <div class="card-body">
+                    @if (_editingComplaint)
+                    {
+                        <textarea class="form-control mb-2" rows="3"
+                                  placeholder="Müşterinin kendi ifadesiyle şikayeti..."
+                                  @bind="_record.CustomerComplaint"></textarea>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" @onclick="SaveRecord"><i class="bi bi-check-lg me-1"></i> Kaydet</button>
+                            <button class="btn btn-light-sm" @onclick="@(() => _editingComplaint = false)">İptal</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="mb-0" style="line-height:1.7">
+                            @(string.IsNullOrEmpty(_record.CustomerComplaint) ?
+                                "Müşteri beyanı girilmemiş." : _record.CustomerComplaint)
+                        </p>
+                    }
+                </div>
+            </div>
+
+            <!-- Teknik Hasar Tespiti -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-clipboard2 text-accent"></i> Teknik Hasar Tespiti</div>
+                    @if (!_editingDamage)
+                    {
+                        <button class="btn btn-light-sm btn-sm" @onclick="@(() => _editingDamage = true)">
+                            <i class="bi bi-pencil me-1"></i> Düzenle
+                        </button>
+                    }
+                </div>
+                <div class="card-body">
+                    @if (_editingDamage)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fs-12">Teknik Hasar Tespiti</label>
+                            <textarea class="form-control" rows="3" @bind="_record.DamageDescription"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fs-12">Ön Kontrol Notları</label>
+                            <textarea class="form-control" rows="2"
+                                      placeholder="Mevcut çizikler, eski hasarlar — müşteriye gösterildi..."
+                                      @bind="_record.PreInspectionNotes"></textarea>
+                            <div class="field-note">Giriş öncesi müşterinin gözünde var olan hasarlar</div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" @onclick="SaveRecord"><i class="bi bi-check-lg me-1"></i> Kaydet</button>
+                            <button class="btn btn-light-sm" @onclick="@(() => _editingDamage = false)">İptal</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="mb-0" style="line-height:1.7">
+                            @(string.IsNullOrEmpty(_record.DamageDescription) ? "Hasar tespiti girilmemiş." : _record.DamageDescription)
+                        </p>
+                        @if (!string.IsNullOrEmpty(_record.PreInspectionNotes))
+                        {
+                            <div class="mt-3 p-3 rounded-3" style="background:#fffbeb; border:1px solid #fde68a">
+                                <div class="fs-12 fw-600 mb-1" style="color:#92400e">
+                                    <i class="bi bi-info-circle me-1"></i> Ön Kontrol Notu
+                                </div>
+                                <div class="fs-13">@_record.PreInspectionNotes</div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Hasar Kalemleri Checklist -->
+            @if (_record.DamageItems.Count > 0)
+            {
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <div class="card-title"><i class="bi bi-list-check text-accent"></i> Hasar Kalemleri</div>
+                        <span class="fs-12 text-muted">
+                            @_record.DamageItems.Count(d => d.IsFixed) / @_record.DamageItems.Count tamamlandı
+                        </span>
+                    </div>
+                    <div class="card-body" style="padding:12px 16px">
+                        @foreach (var item in _record.DamageItems)
+                        {
+                            <div class="damage-item @(item.IsFixed ? "fixed" : "")">
+                                <div class="form-check mb-0">
+                                    <input class="form-check-input" type="checkbox" checked="@item.IsFixed"
+                                           @onchange="@(e => ToggleDamageItem(item, e))" id="di_@item.Id" />
+                                    <label class="form-check-label fw-600 fs-13" for="di_@item.Id">@item.Description</label>
+                                </div>
+                                <div class="d-flex gap-2 align-items-center mt-1 ms-4">
+                                    @if (!string.IsNullOrEmpty(item.Area))
+                                    {
+                                        <span class="tag"><i class="bi bi-geo me-1"></i>@item.Area</span>
+                                    }
+                                    @if (item.EstimatedCost > 0)
+                                    {
+                                        <span class="fs-12 fw-600 @(item.IsFixed ? "text-success" : "text-muted")">
+                                            @item.EstimatedCost.ToString("N0") ₺
+                                        </span>
+                                    }
+                                    @if (item.IsFixed)
+                                    {
+                                        <span class="fs-11" style="color:#10b981"><i class="bi bi-check-circle-fill"></i> Tamamlandı</span>
+                                    }
+                                </div>
+                            </div>
+                        }
+                        <div class="mt-3 pt-2 border-top d-flex justify-content-between align-items-center">
+                            <span class="fs-12 text-muted">Tahmini Toplam</span>
+                            <span class="fw-700 fs-15">@_record.DamageItems.Sum(d => d.EstimatedCost).ToString("N0") ₺</span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Yapılan İşler -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-tools text-accent"></i> Yapılan İşler</div>
+                    @if (!_editingWork)
+                    {
+                        <button class="btn btn-light-sm btn-sm" @onclick="@(() => _editingWork = true)">
+                            <i class="bi bi-pencil me-1"></i> Düzenle
+                        </button>
+                    }
+                </div>
+                <div class="card-body">
+                    @if (_editingWork)
+                    {
+                        <div class="mb-3">
+                            <label class="form-label fs-12">Yapılan İşler</label>
+                            <textarea class="form-control" rows="4"
+                                      placeholder="Yapılan onarım ve değişimleri yazın..."
+                                      @bind="_record.WorkDone"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fs-12">Teknisyen Notu</label>
+                            <textarea class="form-control" rows="2"
+                                      placeholder="Teknisyene özel notlar..."
+                                      @bind="_record.TechnicianNotes"></textarea>
+                        </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-sm-6">
+                                <label class="form-label fs-12">Kesin Maliyet (₺)</label>
+                                <input class="form-control" type="number" step="100" @bind="_record.FinalCost" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label fs-12">Çıkış Km</label>
+                                <input class="form-control" type="number" @bind="_record.ExitMileage" />
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-primary btn-sm" @onclick="SaveRecord"><i class="bi bi-check-lg me-1"></i> Kaydet</button>
+                            <button class="btn btn-light-sm" @onclick="@(() => _editingWork = false)">İptal</button>
+                        </div>
+                    }
+                    else
+                    {
+                        @if (string.IsNullOrEmpty(_record.WorkDone))
+                        {
+                            <p class="text-muted mb-0 fs-13"><i class="bi bi-clock me-1"></i> Henüz iş başlamadı.</p>
+                        }
+                        else
+                        {
+                            <p style="line-height:1.7" class="mb-2">@_record.WorkDone</p>
+                            @if (!string.IsNullOrEmpty(_record.TechnicianNotes))
+                            {
+                                <div class="p-3 rounded-3" style="background:#f8fafc; border:1px solid var(--border-color)">
+                                    <div class="fs-12 fw-600 text-muted mb-1"><i class="bi bi-sticky me-1"></i>Teknisyen Notu</div>
+                                    <div class="fs-13">@_record.TechnicianNotes</div>
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+
+            <!-- Fotoğraflar -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="bi bi-images text-accent"></i> Hasar Fotoğrafları
+                        <span class="badge bg-light text-muted ms-2" style="font-size:11px">@_record.Photos.Count</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (_record.Photos.Any())
+                    {
+                        <div class="photo-grid mb-3">
+                            @foreach (var photo in _record.Photos)
+                            {
+                                <div class="photo-item">
+                                    @if (photo.FileName == "placeholder.png" || !System.IO.File.Exists(Path.Combine("wwwroot", "uploads", photo.FileName)))
+                                    {
+                                        <div class="d-flex flex-column align-items-center justify-content-center h-100 p-2">
+                                            <i class="bi bi-image text-muted" style="font-size:32px"></i>
+                                            <div class="fs-12 text-muted mt-1 text-center">@photo.OriginalFileName</div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <img src="@photo.WebPath" alt="@photo.Description" />
+                                    }
+                                    <div class="photo-item-label">@photo.DamageAreaLabel</div>
+                                    <button class="photo-delete-btn" @onclick="@(() => DeletePhoto(photo.Id))" title="Sil">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="photo-upload-area" @onclick="TriggerFileInput">
+                        <div class="photo-upload-icon"><i class="bi bi-camera-fill"></i></div>
+                        <div class="fw-600 mb-1">Fotoğraf Ekle</div>
+                        <div class="fs-12 text-muted">Kamera ile çekin veya dosya seçin (JPG, PNG • maks 10MB)</div>
+                    </div>
+                    <InputFile id="photoInput" OnChange="HandlePhotoUpload" accept="image/*" capture="environment"
+                               multiple style="display:none" />
+                    <select class="form-select mt-2" @bind="_selectedArea">
+                        <option value="">Hasar Bölgesi (İsteğe Bağlı)</option>
+                        <option>Ön Sol</option><option>Ön Sağ</option><option>Ön Merkez</option>
+                        <option>Arka Sol</option><option>Arka Sağ</option><option>Arka Merkez</option>
+                        <option>Sol Yan</option><option>Sağ Yan</option>
+                        <option>Kaput</option><option>Çatı</option><option>Motor</option>
+                        <option>İç Mekan</option><option>Diğer</option>
+                    </select>
+                    @if (_uploading)
+                    {
+                        <div class="d-flex align-items-center gap-2 mt-2 fs-13" style="color:var(--accent)">
+                            <div class="spinner-border spinner-border-sm"></div> Yükleniyor...
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column -->
+        <div class="col-12 col-lg-4">
+            <!-- Araç -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-car-front text-accent"></i> Araç</div>
+                    <a href="/vehicles/@_record.VehicleId" class="fs-12" style="color:var(--accent)">Detay →</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="px-4">
+                        <div class="info-row">
+                            <div class="info-label">Plaka</div>
+                            <div><span class="plate-badge">@_record.Vehicle?.Plate</span></div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Marka / Model</div>
+                            <div class="info-value">@_record.Vehicle?.Brand @_record.Vehicle?.Model</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Yıl / Renk</div>
+                            <div class="info-value">@_record.Vehicle?.Year — @_record.Vehicle?.Color</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Yakıt / Vites</div>
+                            <div class="info-value">@(_record.Vehicle?.FuelType ?? "—") / @(_record.Vehicle?.TransmissionType ?? "—")</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Giriş Km</div>
+                            <div class="info-value">@(_record.EntryMileage.HasValue ? _record.EntryMileage.Value.ToString("N0") + " km" : "—")</div>
+                        </div>
+                        @if (_record.ExitMileage.HasValue)
+                        {
+                            <div class="info-row">
+                                <div class="info-label">Çıkış Km</div>
+                                <div class="info-value">@_record.ExitMileage.Value.ToString("N0") km</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Müşteri -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-person text-accent"></i> Müşteri</div>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div class="customer-avatar" style="width:44px;height:44px;font-size:18px">
+                            @(_record.Vehicle?.Customer?.FullName?.Substring(0,1) ?? "?")
+                        </div>
+                        <div>
+                            <div class="fw-700">@_record.Vehicle?.Customer?.FullName</div>
+                            <div class="fs-12 text-muted">@_record.Vehicle?.Customer?.Phone</div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_record.Vehicle?.Customer?.Email))
+                    {
+                        <div class="fs-12 text-muted mt-1"><i class="bi bi-envelope me-1"></i>@_record.Vehicle.Customer.Email</div>
+                    }
+                    @if (!string.IsNullOrEmpty(_record.Vehicle?.Customer?.CompanyName))
+                    {
+                        <div class="fs-12 text-muted mt-1"><i class="bi bi-building me-1"></i>@_record.Vehicle.Customer.CompanyName</div>
+                    }
+                </div>
+            </div>
+
+            <!-- Kayıt Bilgisi -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-info-circle text-accent"></i> Kayıt Bilgisi</div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="px-4">
+                        <div class="info-row">
+                            <div class="info-label">Teknisyen</div>
+                            <div class="info-value">@(_record.AssignedTechnician ?? "Atanmadı")</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Konum</div>
+                            <div class="info-value">@(_record.ParkingSpot ?? "—")</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Giriş Tarihi</div>
+                            <div class="info-value">@_record.EntryDate.ToString("dd.MM.yyyy HH:mm")</div>
+                        </div>
+                        @if (_record.EstimatedDeliveryDate.HasValue)
+                        {
+                            <div class="info-row">
+                                <div class="info-label">Tahmini Teslim</div>
+                                <div class="info-value @(_record.EstimatedDeliveryDate < DateTime.Now && _record.Status != ServiceStatus.Delivered ? "text-danger fw-600" : "")">
+                                    @_record.EstimatedDeliveryDate.Value.ToString("dd.MM.yyyy")
+                                </div>
+                            </div>
+                        }
+                        <div class="info-row">
+                            <div class="info-label">Tahmini Maliyet</div>
+                            <div class="info-value fw-700">@(_record.EstimatedCost > 0 ? _record.EstimatedCost.ToString("N0") + " ₺" : "—")</div>
+                        </div>
+                        @if (_record.FinalCost.HasValue)
+                        {
+                            <div class="info-row">
+                                <div class="info-label">Kesin Maliyet</div>
+                                <div class="info-value fw-700 text-success">@_record.FinalCost.Value.ToString("N0") ₺</div>
+                            </div>
+                        }
+                        <div class="info-row">
+                            <div class="info-label">Onay Durumu</div>
+                            <div class="info-value">@ApprovalLabel(_record.ApprovalStatus)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sigorta -->
+            @if (_record.HasInsurance)
+            {
+                <div class="card mb-3" style="border-color:#a7f3d0">
+                    <div class="card-header" style="background:#f0fdf4">
+                        <div class="card-title" style="color:#065f46"><i class="bi bi-shield-check"></i> Sigorta Bilgisi</div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="px-4">
+                            <div class="info-row">
+                                <div class="info-label">Sigorta Şirketi</div>
+                                <div class="info-value fw-600">@(_record.InsuranceCompany ?? "—")</div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">Poliçe No</div>
+                                <div class="info-value" style="font-family:monospace;font-size:12px">@(_record.InsurancePolicyNo ?? "—")</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Durum Güncelle -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-arrow-repeat text-accent"></i> Durum Güncelle</div>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        @foreach (var (s, label, icon, css) in StatusActions())
+                        {
+                            <button class="btn @css btn-sm @(_record.Status == s ? "active" : "")"
+                                    @onclick="@(() => UpdateStatus(s))"
+                                    disabled="@(_record.Status == s)">
+                                <i class="bi @icon me-2"></i>@label
+                                @if (_record.Status == s)
+                                {
+                                    <i class="bi bi-check-lg ms-auto float-end"></i>
+                                }
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ServiceRecord? _record;
+    private bool _editingComplaint = false;
+    private bool _editingDamage = false;
+    private bool _editingWork = false;
+    private bool _uploading = false;
+    private string _selectedArea = "";
+
+    protected override async Task OnInitializedAsync() => await LoadRecord();
+
+    private async Task LoadRecord() => _record = await Store.GetServiceRecordByIdAsync(Id);
+
+    private async Task SaveRecord()
+    {
+        if (_record == null) return;
+        await Store.UpdateServiceRecordAsync(_record);
+        _editingComplaint = false;
+        _editingDamage = false;
+        _editingWork = false;
+        await LoadRecord();
+    }
+
+    private async Task UpdateStatus(ServiceStatus newStatus)
+    {
+        if (_record == null) return;
+        _record.Status = newStatus;
+        if (newStatus == ServiceStatus.Delivered && !_record.ExitDate.HasValue)
+            _record.ExitDate = DateTime.Now;
+        await Store.UpdateServiceRecordAsync(_record);
+        await LoadRecord();
+    }
+
+    private async Task ToggleDamageItem(DamageItem item, ChangeEventArgs e)
+    {
+        if (_record == null) return;
+        var target = _record.DamageItems.FirstOrDefault(d => d.Id == item.Id);
+        if (target != null)
+        {
+            target.IsFixed = (bool)(e.Value ?? false);
+            await Store.UpdateServiceRecordAsync(_record);
+        }
+    }
+
+    private async Task HandlePhotoUpload(InputFileChangeEventArgs e)
+    {
+        if (_record == null) return;
+        _uploading = true;
+        StateHasChanged();
+
+        var uploadsDir = Path.Combine("wwwroot", "uploads");
+        Directory.CreateDirectory(uploadsDir);
+
+        foreach (var file in e.GetMultipleFiles(10))
+        {
+            var ext = Path.GetExtension(file.Name);
+            var fileName = $"sr{_record.Id}_{Guid.NewGuid():N}{ext}";
+            await using var fs = new FileStream(Path.Combine(uploadsDir, fileName), FileMode.Create);
+            await file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024).CopyToAsync(fs);
+            await Store.AddPhotoAsync(new DamagePhoto
+            {
+                ServiceRecordId = _record.Id,
+                FileName = fileName,
+                OriginalFileName = file.Name,
+                DamageAreaLabel = string.IsNullOrEmpty(_selectedArea) ? "Genel" : _selectedArea,
+                FileSizeBytes = file.Size
+            });
+        }
+
+        _uploading = false;
+        await LoadRecord();
+    }
+
+    private async Task DeletePhoto(int photoId)
+    {
+        await Store.DeletePhotoAsync(photoId);
+        await LoadRecord();
+    }
+
+    private async Task TriggerFileInput() =>
+        await JS.InvokeVoidAsync("eval", "document.getElementById('photoInput').click()");
+
+    private async Task PrintRecord() => await JS.InvokeVoidAsync("print");
+
+    private string ApprovalLabel(ApprovalStatus s) => s switch
+    {
+        ApprovalStatus.Approved => "✅ Onaylandı",
+        ApprovalStatus.Rejected => "❌ Reddedildi",
+        _ => "⏳ Onay Bekliyor"
+    };
+
+    private IEnumerable<(ServiceStatus S, string Label, string Icon, string Css)> StatusActions() =>
+        new[]
+        {
+            (ServiceStatus.Waiting,      "Bekliyor",           "bi-hourglass-split", "btn-outline-warning"),
+            (ServiceStatus.Diagnosing,   "İnceleniyor",        "bi-search",          "btn-outline-secondary"),
+            (ServiceStatus.InProgress,   "Onarımda",           "bi-tools",           "btn-outline-primary"),
+            (ServiceStatus.WaitingParts, "Parça Bekleniyor",   "bi-box-seam",        "btn-outline-warning"),
+            (ServiceStatus.Completed,    "Tamamlandı",         "bi-check-circle",    "btn-outline-success"),
+            (ServiceStatus.Delivered,    "Teslim Edildi",      "bi-check2-all",      "btn-outline-dark"),
+        };
+
+    private IEnumerable<(ServiceStatus Step, string Label, string Icon)> Steps() =>
+        new[]
+        {
+            (ServiceStatus.Waiting,      "Bekliyor",   "bi-hourglass-split"),
+            (ServiceStatus.Diagnosing,   "İnceleme",   "bi-search"),
+            (ServiceStatus.InProgress,   "Onarım",     "bi-tools"),
+            (ServiceStatus.WaitingParts, "Parça",      "bi-box-seam"),
+            (ServiceStatus.Completed,    "Bitti",      "bi-check-circle"),
+            (ServiceStatus.Delivered,    "Teslim",     "bi-check2-all"),
+        };
+
+    private string StepCss(ServiceStatus step)
+    {
+        if (_record == null) return "";
+        if ((int)step < (int)_record.Status) return "done";
+        if ((int)step == (int)_record.Status) return "active";
+        return "";
+    }
+
+    private RenderFragment StatusBadge(ServiceStatus s) => s switch
+    {
+        ServiceStatus.Waiting      => @<span class="badge-status badge-waiting">Bekliyor</span>,
+        ServiceStatus.Diagnosing   => @<span class="badge-status badge-diagnosing">İnceleniyor</span>,
+        ServiceStatus.InProgress   => @<span class="badge-status badge-inprogress">Onarımda</span>,
+        ServiceStatus.WaitingParts => @<span class="badge-status badge-waitingparts">Parça Bekleniyor</span>,
+        ServiceStatus.Completed    => @<span class="badge-status badge-completed">Tamamlandı</span>,
+        ServiceStatus.Delivered    => @<span class="badge-status badge-delivered">Teslim Edildi</span>,
+        _                          => @<span class="badge-status badge-delivered">—</span>
+    };
+
+    private RenderFragment PriorityBadge(ServicePriority p) => p switch
+    {
+        ServicePriority.Urgent => @<span class="badge-priority priority-urgent"><i class="bi bi-exclamation-triangle-fill"></i> ACİL</span>,
+        ServicePriority.High   => @<span class="badge-priority priority-high"><i class="bi bi-arrow-up"></i> Yüksek</span>,
+        ServicePriority.Low    => @<span class="badge-priority priority-low">Düşük</span>,
+        _                      => @<span></span>
+    };
+}

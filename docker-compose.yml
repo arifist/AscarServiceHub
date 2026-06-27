@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  ascarapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ascar_service_hub
+    ports:
+      - "8080:8080"
+    volumes:
+      - ascar_app_data:/app/App_Data
+      - ascar_uploads:/app/wwwroot/uploads
+    environment:
+      - ASPNETCORE_URLS=http://+:8080
+      - Database__JsonDataDir=App_Data
+    restart: unless-stopped
+
+volumes:
+  ascar_app_data:
+    driver: local
+  ascar_uploads:
+    driver: local

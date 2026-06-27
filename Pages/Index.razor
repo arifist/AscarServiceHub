@@ -1,0 +1,344 @@
+@page "/"
+@inject JsonDataStore Store
+@inject NavigationManager Nav
+
+<PageTitle>Panel — Ascar Servis</PageTitle>
+
+@if (_stats == null)
+{
+    <div class="loading-spinner">
+        <div class="spinner-border text-accent" role="status"></div>
+    </div>
+}
+else
+{
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">Hoş Geldiniz</h1>
+            <p class="page-subtitle">@DateTime.Now.ToString("dd MMMM yyyy, dddd", new System.Globalization.CultureInfo("tr-TR")) • Günlük servis özeti</p>
+        </div>
+        <a href="/intake" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Araç Kabul
+        </a>
+    </div>
+
+    <!-- Urgent Alert -->
+    @if (_stats.UrgentCount > 0)
+    {
+        <div class="alert-banner mb-3">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            <strong>@_stats.UrgentCount acil servis kaydı</strong> bekliyor — hemen incelemek için
+            <a href="/workshop" class="alert-banner-link">Atölye Durumu'na git</a>
+        </div>
+    }
+
+    <!-- Stat Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card si-blue hover-lift">
+                <div class="stat-card-top">
+                    <div>
+                        <div class="stat-card-value">@_stats.ActiveRecords</div>
+                        <div class="stat-card-label">Aktif Servis</div>
+                    </div>
+                    <div class="stat-card-icon"><i class="bi bi-clipboard2-check"></i></div>
+                </div>
+                <div class="stat-card-sub">
+                    <i class="bi bi-arrow-right-circle"></i>
+                    @_stats.WaitingCount bekliyor · @_stats.InProgressCount onarımda
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card si-amber hover-lift">
+                <div class="stat-card-top">
+                    <div>
+                        <div class="stat-card-value">@_stats.UrgentCount</div>
+                        <div class="stat-card-label">Acil / Öncelikli</div>
+                    </div>
+                    <div class="stat-card-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                </div>
+                <div class="stat-card-sub">
+                    <i class="bi bi-clock"></i> @_stats.WaitingPartsCount parça bekliyor
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card si-green hover-lift">
+                <div class="stat-card-top">
+                    <div>
+                        <div class="stat-card-value">@_stats.CompletedThisMonth</div>
+                        <div class="stat-card-label">Bu Ay Teslim</div>
+                    </div>
+                    <div class="stat-card-icon"><i class="bi bi-check-circle"></i></div>
+                </div>
+                <div class="stat-card-sub">
+                    <i class="bi bi-calendar-check"></i>
+                    @DateTime.Now.ToString("MMMM", new System.Globalization.CultureInfo("tr-TR")) ayı
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="stat-card si-indigo hover-lift">
+                <div class="stat-card-top">
+                    <div>
+                        <div class="stat-card-value">@_stats.RevenueThisMonth.ToString("N0") ₺</div>
+                        <div class="stat-card-label">Bu Ay Ciro</div>
+                    </div>
+                    <div class="stat-card-icon"><i class="bi bi-currency-exchange"></i></div>
+                </div>
+                <div class="stat-card-sub">
+                    <i class="bi bi-graph-up"></i> Toplam @_stats.TotalRevenue.ToString("N0") ₺
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <!-- Status Pipeline -->
+        <div class="col-12 col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-funnel text-accent"></i> Durum Dağılımı</div>
+                    <a href="/workshop" class="fs-12 text-accent fw-600">Kanban →</a>
+                </div>
+                <div class="card-body">
+                    @foreach (var row in StatusRows())
+                    {
+                        <div class="status-pipeline-row" @onclick="@(() => Nav.NavigateTo("/service-records"))">
+                            <div class="d-flex align-items-center gap-2 flex-grow-1">
+                                <span class="status-dot" style="background:@row.Dot"></span>
+                                <span class="fs-13 fw-600">@row.Label</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="pipeline-bar-wrap">
+                                    <div class="pipeline-bar" style="width:@(row.Pct)%; background:@row.Dot"></div>
+                                </div>
+                                <span class="fw-700 fs-13" style="min-width:20px; text-align:right">@row.Count</span>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="divider mt-2 mb-3"></div>
+
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fs-12 text-muted">Teslim oranı (toplam @_stats.TotalRecords kayıt)</span>
+                        <span class="fw-700 fs-13">
+                            @(_stats.TotalRecords == 0 ? 0 : (int)((double)_stats.DeliveredCount / _stats.TotalRecords * 100))%
+                        </span>
+                    </div>
+                    <div class="progress mt-1" style="height:5px; border-radius:3px;">
+                        @{
+                            var pct = _stats.TotalRecords == 0 ? 0 : (int)((double)_stats.DeliveredCount / _stats.TotalRecords * 100);
+                        }
+                        <div class="progress-bar" style="width:@pct%; background:var(--accent);" role="progressbar"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Vehicles Mini Kanban -->
+        <div class="col-12 col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-layout-three-columns text-accent"></i> Atölyedeki Araçlar</div>
+                    <a href="/workshop" class="btn btn-light-sm">Tam Görünüm <i class="bi bi-arrow-right ms-1"></i></a>
+                </div>
+                <div class="card-body" style="padding:16px">
+                    @if (_activeRecords.Count == 0)
+                    {
+                        <div class="empty-state py-4">
+                            <div class="empty-state-icon"><i class="bi bi-car-front"></i></div>
+                            <div class="empty-state-title">Atölyede araç yok</div>
+                            <div class="empty-state-text">Yeni araç kabulü için "Araç Kabul" butonunu kullanın.</div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mini-kanban">
+                            @foreach (var record in _activeRecords.Take(6))
+                            {
+                                <div class="mini-vehicle-card" @onclick="@(() => Nav.NavigateTo($"/service-records/{record.Id}"))">
+                                    <div class="d-flex justify-content-between align-items-start mb-1">
+                                        <span class="mini-plate">@record.Vehicle?.Plate</span>
+                                        @StatusBadgeSmall(record.Status)
+                                    </div>
+                                    <div class="fs-13 fw-600 mb-1">@record.Vehicle?.Brand @record.Vehicle?.Model</div>
+                                    <div class="fs-12 text-muted">@record.Vehicle?.Customer?.FullName</div>
+                                    @if (record.Priority == ServicePriority.Urgent)
+                                    {
+                                        <div class="mt-2"><span class="badge-priority priority-urgent" style="font-size:10px"><i class="bi bi-exclamation-triangle-fill"></i> ACİL</span></div>
+                                    }
+                                    else if (record.Priority == ServicePriority.High)
+                                    {
+                                        <div class="mt-2"><span class="badge-priority priority-high" style="font-size:10px"><i class="bi bi-arrow-up"></i> Yüksek</span></div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                        @if (_activeRecords.Count > 6)
+                        {
+                            <div class="text-center mt-3">
+                                <a href="/workshop" class="fs-12 text-accent fw-600">+@(_activeRecords.Count - 6) araç daha →</a>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Records -->
+    <div class="card mb-3">
+        <div class="card-header">
+            <div class="card-title"><i class="bi bi-clock-history text-accent"></i> Son Servis Kayıtları</div>
+            <a href="/service-records" class="btn btn-light-sm">Tümünü Gör <i class="bi bi-arrow-right ms-1"></i></a>
+        </div>
+        <div class="table-responsive">
+            <table class="table-ascar table-clickable">
+                <thead>
+                    <tr>
+                        <th>Kayıt No</th>
+                        <th>Araç / Plaka</th>
+                        <th>Müşteri</th>
+                        <th>Giriş</th>
+                        <th>Öncelik</th>
+                        <th>Durum</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in _recentRecords)
+                    {
+                        <tr @onclick="@(() => Nav.NavigateTo($"/service-records/{r.Id}"))">
+                            <td><span class="record-number">@r.RecordNumber</span></td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="vehicle-icon-wrap" style="width:30px;height:30px;font-size:14px">
+                                        <i class="bi bi-car-front"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-600 fs-13">@r.Vehicle?.Brand @r.Vehicle?.Model</div>
+                                        <span class="plate-badge" style="font-size:11px; padding:1px 6px">@r.Vehicle?.Plate</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="customer-avatar" style="width:26px;height:26px;font-size:10px">
+                                        @(r.Vehicle?.Customer?.FullName?.Substring(0, 1) ?? "?")
+                                    </div>
+                                    <span class="fs-13">@r.Vehicle?.Customer?.FullName</span>
+                                </div>
+                            </td>
+                            <td class="text-muted fs-12">@r.EntryDate.ToString("dd.MM.yyyy")</td>
+                            <td>@PriorityBadge(r.Priority)</td>
+                            <td>@StatusBadge(r.Status)</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Quick Stats Row -->
+    <div class="row g-3">
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="quick-stat-card">
+                <div class="quick-stat-icon" style="background:#dbeafe;color:#1d4ed8"><i class="bi bi-people"></i></div>
+                <div>
+                    <div class="fw-700 fs-16">@_stats.TotalCustomers</div>
+                    <div class="fs-12 text-muted">Müşteri</div>
+                </div>
+                <a href="/customers" class="stretched-link"></a>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="quick-stat-card">
+                <div class="quick-stat-icon" style="background:#ede9fe;color:#5b21b6"><i class="bi bi-car-front"></i></div>
+                <div>
+                    <div class="fw-700 fs-16">@_stats.TotalVehicles</div>
+                    <div class="fs-12 text-muted">Kayıtlı Araç</div>
+                </div>
+                <a href="/vehicles" class="stretched-link"></a>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="quick-stat-card">
+                <div class="quick-stat-icon" style="background:#d1fae5;color:#065f46"><i class="bi bi-check2-circle"></i></div>
+                <div>
+                    <div class="fw-700 fs-16">@_stats.DeliveredCount</div>
+                    <div class="fs-12 text-muted">Teslim Edildi</div>
+                </div>
+                <a href="/service-records" class="stretched-link"></a>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-md-3">
+            <div class="quick-stat-card">
+                <div class="quick-stat-icon" style="background:#fef3c7;color:#92400e"><i class="bi bi-gear"></i></div>
+                <div>
+                    <div class="fw-700 fs-16">@_stats.InProgressCount</div>
+                    <div class="fs-12 text-muted">Aktif Onarım</div>
+                </div>
+                <a href="/workshop" class="stretched-link"></a>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private DashboardStats? _stats;
+    private List<ServiceRecord> _recentRecords = new();
+    private List<ServiceRecord> _activeRecords = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _stats = await Store.GetDashboardStatsAsync();
+        var all = await Store.GetServiceRecordsAsync();
+        _recentRecords = all.Take(7).ToList();
+        _activeRecords = await Store.GetActiveServiceRecordsAsync();
+    }
+
+    private record StatusRow(string Label, int Count, string Dot, int Pct);
+
+    private IEnumerable<StatusRow> StatusRows()
+    {
+        var total = _stats!.ActiveRecords == 0 ? 1 : _stats.ActiveRecords;
+        return new[]
+        {
+            new StatusRow("Bekliyor",          _stats.WaitingCount,     "#f59e0b", _stats.WaitingCount * 100 / total),
+            new StatusRow("İnceleniyor",        _stats.DiagnosingCount,  "#8b5cf6", _stats.DiagnosingCount * 100 / total),
+            new StatusRow("Onarımda",           _stats.InProgressCount,  "#3b82f6", _stats.InProgressCount * 100 / total),
+            new StatusRow("Parça Bekleniyor",   _stats.WaitingPartsCount,"#f97316", _stats.WaitingPartsCount * 100 / total),
+            new StatusRow("Tamamlandı",         _stats.CompletedCount,   "#10b981", _stats.CompletedCount * 100 / total),
+        };
+    }
+
+    private RenderFragment StatusBadge(ServiceStatus s) => s switch
+    {
+        ServiceStatus.Waiting      => @<span class="badge-status badge-waiting">Bekliyor</span>,
+        ServiceStatus.Diagnosing   => @<span class="badge-status badge-diagnosing">İnceleniyor</span>,
+        ServiceStatus.InProgress   => @<span class="badge-status badge-inprogress">Onarımda</span>,
+        ServiceStatus.WaitingParts => @<span class="badge-status badge-waitingparts">Parça Bekleniyor</span>,
+        ServiceStatus.Completed    => @<span class="badge-status badge-completed">Tamamlandı</span>,
+        ServiceStatus.Delivered    => @<span class="badge-status badge-delivered">Teslim Edildi</span>,
+        _                          => @<span class="badge-status badge-delivered">—</span>
+    };
+
+    private RenderFragment StatusBadgeSmall(ServiceStatus s) => s switch
+    {
+        ServiceStatus.Waiting      => @<span class="mini-status" style="color:#92400e;background:#fef3c7">Bekliyor</span>,
+        ServiceStatus.Diagnosing   => @<span class="mini-status" style="color:#5b21b6;background:#ede9fe">İncelemede</span>,
+        ServiceStatus.InProgress   => @<span class="mini-status" style="color:#1e40af;background:#dbeafe">Onarımda</span>,
+        ServiceStatus.WaitingParts => @<span class="mini-status" style="color:#9a3412;background:#ffedd5">Parça</span>,
+        ServiceStatus.Completed    => @<span class="mini-status" style="color:#065f46;background:#d1fae5">Bitti</span>,
+        _                          => @<span class="mini-status" style="color:#475569;background:#f1f5f9">—</span>
+    };
+
+    private RenderFragment PriorityBadge(ServicePriority p) => p switch
+    {
+        ServicePriority.Urgent => @<span class="badge-priority priority-urgent"><i class="bi bi-exclamation-triangle-fill"></i> ACİL</span>,
+        ServicePriority.High   => @<span class="badge-priority priority-high"><i class="bi bi-arrow-up"></i> Yüksek</span>,
+        ServicePriority.Low    => @<span class="badge-priority priority-low">Düşük</span>,
+        _                      => @<span class="badge-priority priority-normal">Normal</span>
+    };
+}

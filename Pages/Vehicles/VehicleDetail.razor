@@ -1,0 +1,332 @@
+@page "/vehicles/{Id:int}"
+@inject JsonDataStore Store
+@inject NavigationManager Nav
+
+<PageTitle>@(_vehicle?.DisplayName ?? "Araç") — Ascar Servis</PageTitle>
+
+@if (_vehicle == null)
+{
+    <div class="loading-spinner"><div class="spinner-border text-accent" role="status"></div></div>
+}
+else
+{
+    <div class="page-header">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <a href="/vehicles" class="btn btn-light-sm btn-sm"><i class="bi bi-arrow-left"></i></a>
+                <span class="plate-badge" style="font-size:13px">@_vehicle.Plate</span>
+            </div>
+            <h1 class="page-title">@_vehicle.Brand @_vehicle.Model</h1>
+            <p class="page-subtitle">@_vehicle.Year · @_vehicle.Color · @_vehicle.FuelType</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/intake" class="btn btn-primary">
+                <i class="bi bi-clipboard2-plus me-1"></i> Servis Kaydı Aç
+            </a>
+            <button class="btn btn-light-sm" @onclick="@(() => _editing = true)">
+                <i class="bi bi-pencil me-1"></i> Düzenle
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-12 col-lg-4">
+            <!-- Araç Kartı -->
+            <div class="card mb-3">
+                <div class="card-body text-center py-4">
+                    <div class="vehicle-icon-wrap mx-auto mb-3" style="width:64px;height:64px;font-size:28px">
+                        <i class="bi bi-car-front"></i>
+                    </div>
+                    <div class="fw-800" style="font-size:18px">@_vehicle.Brand @_vehicle.Model</div>
+                    <div class="text-muted fs-13 mb-3">@_vehicle.Year • @_vehicle.Color</div>
+                    <span class="plate-badge" style="font-size:16px; padding:6px 16px">@_vehicle.Plate</span>
+                </div>
+                <div class="card-body p-0 border-top">
+                    <div class="px-4">
+                        <div class="info-row">
+                            <div class="info-label">Yakıt Tipi</div>
+                            <div class="info-value">@(_vehicle.FuelType ?? "—")</div>
+                        </div>
+                        <div class="info-row">
+                            <div class="info-label">Vites</div>
+                            <div class="info-value">@(_vehicle.TransmissionType ?? "—")</div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(_vehicle.Vin))
+                        {
+                            <div class="info-row">
+                                <div class="info-label">Şasi No (VIN)</div>
+                                <div class="info-value" style="font-family:monospace;font-size:12px">@_vehicle.Vin</div>
+                            </div>
+                        }
+                        <div class="info-row">
+                            <div class="info-label">Kayıt Tarihi</div>
+                            <div class="info-value">@_vehicle.CreatedAt.ToString("dd.MM.yyyy")</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Aktif Servis Durumu (Combobox) -->
+            @if (_activeRecord != null)
+            {
+                <div class="card mb-3" style="border:1px solid var(--accent-light)">
+                    <div class="card-header" style="background:var(--accent-dim)">
+                        <div class="card-title" style="color:var(--accent)">
+                            <i class="bi bi-tools"></i> Aktif Servis
+                        </div>
+                        <a href="/service-records/@_activeRecord.Id" class="fs-12 fw-600" style="color:var(--accent)">Detay →</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="record-number">@_activeRecord.RecordNumber</span>
+                            @PriorityBadge(_activeRecord.Priority)
+                        </div>
+                        <p class="fs-12 text-muted mb-3" style="line-height:1.6">
+                            @(string.IsNullOrEmpty(_activeRecord.CustomerComplaint) ? _activeRecord.DamageDescription : _activeRecord.CustomerComplaint)
+                        </p>
+
+                        <label class="form-label fw-600 fs-12">Araç Durumu</label>
+                        <select class="form-select status-select" @onchange="UpdateActiveRecordStatus">
+                            <option value="@ServiceStatus.Waiting"      selected="@(_activeRecord.Status == ServiceStatus.Waiting)">⏳ Bekliyor</option>
+                            <option value="@ServiceStatus.Diagnosing"   selected="@(_activeRecord.Status == ServiceStatus.Diagnosing)">🔍 İnceleniyor</option>
+                            <option value="@ServiceStatus.InProgress"   selected="@(_activeRecord.Status == ServiceStatus.InProgress)">🔧 Onarımda</option>
+                            <option value="@ServiceStatus.WaitingParts" selected="@(_activeRecord.Status == ServiceStatus.WaitingParts)">📦 Parça Bekleniyor</option>
+                            <option value="@ServiceStatus.Completed"    selected="@(_activeRecord.Status == ServiceStatus.Completed)">✅ Tamamlandı</option>
+                            <option value="@ServiceStatus.Delivered"    selected="@(_activeRecord.Status == ServiceStatus.Delivered)">🚗 Teslim Edildi</option>
+                        </select>
+
+                        @if (_statusSaved)
+                        {
+                            <div class="info-box info-box-green mt-2" style="padding:8px 12px; font-size:12px">
+                                <i class="bi bi-check-circle"></i> Durum güncellendi
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Müşteri -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-person text-accent"></i> Araç Sahibi</div>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="customer-avatar" style="width:48px;height:48px;font-size:20px">
+                            @(_vehicle.Customer?.FullName?.Substring(0,1) ?? "?")
+                        </div>
+                        <div>
+                            <div class="fw-700 fs-15">@_vehicle.Customer?.FullName</div>
+                            <div class="text-muted fs-13">@_vehicle.Customer?.Phone</div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_vehicle.Customer?.Email))
+                    {
+                        <div class="fs-13 mb-1"><i class="bi bi-envelope me-2 text-muted"></i>@_vehicle.Customer.Email</div>
+                    }
+                    @if (!string.IsNullOrEmpty(_vehicle.Customer?.Address))
+                    {
+                        <div class="fs-13 text-muted"><i class="bi bi-geo-alt me-2"></i>@_vehicle.Customer.Address</div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Servis Geçmişi -->
+        <div class="col-12 col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="bi bi-clock-history text-accent"></i> Servis Geçmişi
+                        <span class="badge bg-light text-muted ms-2">@_serviceRecords.Count kayıt</span>
+                    </div>
+                    <a href="/intake" class="btn btn-light-sm">
+                        <i class="bi bi-plus me-1"></i> Yeni Kayıt
+                    </a>
+                </div>
+
+                @if (_serviceRecords.Count == 0)
+                {
+                    <div class="empty-state">
+                        <div class="empty-state-icon"><i class="bi bi-clipboard2"></i></div>
+                        <div class="empty-state-title">Servis Kaydı Yok</div>
+                        <div class="empty-state-text">Bu araç için henüz servis kaydı oluşturulmamış.</div>
+                        <a href="/intake" class="btn btn-primary mt-3">
+                            <i class="bi bi-plus me-1"></i> İlk Kaydı Oluştur
+                        </a>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table class="table-ascar table-clickable">
+                            <thead>
+                                <tr>
+                                    <th>Kayıt No</th>
+                                    <th>Giriş Tarihi</th>
+                                    <th>Şikayet</th>
+                                    <th>Maliyet</th>
+                                    <th>Durum</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var r in _serviceRecords)
+                                {
+                                    <tr @onclick="@(() => Nav.NavigateTo($"/service-records/{r.Id}"))">
+                                        <td>
+                                            <span class="record-number">@r.RecordNumber</span>
+                                            @if (r.Priority == ServicePriority.Urgent)
+                                            {
+                                                <span class="badge-priority priority-urgent ms-1" style="font-size:9px; padding:1px 5px">ACİL</span>
+                                            }
+                                        </td>
+                                        <td class="fs-12 text-muted">@r.EntryDate.ToString("dd.MM.yyyy")</td>
+                                        <td>
+                                            <div class="fs-13" style="max-width:220px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis">
+                                                @(string.IsNullOrEmpty(r.CustomerComplaint) ? r.DamageDescription : r.CustomerComplaint)
+                                            </div>
+                                        </td>
+                                        <td>
+                                            @if (r.FinalCost.HasValue)
+                                            {
+                                                <span class="fw-700 text-success fs-13">@r.FinalCost.Value.ToString("N0") ₺</span>
+                                            }
+                                            else if (r.EstimatedCost > 0)
+                                            {
+                                                <span class="text-muted fs-12">~@r.EstimatedCost.ToString("N0") ₺</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">—</span>
+                                            }
+                                        </td>
+                                        <td>@StatusBadge(r.Status)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@if (_editing && _vehicle != null)
+{
+    <div class="modal show d-block" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="border-radius:var(--radius-lg); border:none">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-700">Araç Bilgilerini Düzenle</h5>
+                    <button type="button" class="btn-close" @onclick="@(() => _editing = false)"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label">Plaka</label>
+                            <input class="form-control" @bind="_vehicle.Plate" style="font-weight:700;font-family:monospace;text-transform:uppercase" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Marka</label>
+                            <input class="form-control" @bind="_vehicle.Brand" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Model</label>
+                            <input class="form-control" @bind="_vehicle.Model" />
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label">Yıl</label>
+                            <input class="form-control" type="number" @bind="_vehicle.Year" />
+                        </div>
+                        <div class="col-sm-3">
+                            <label class="form-label">Renk</label>
+                            <input class="form-control" @bind="_vehicle.Color" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Yakıt</label>
+                            <select class="form-select" @bind="_vehicle.FuelType">
+                                <option>Benzin</option><option>Dizel</option><option>LPG</option><option>Hybrid</option><option>Elektrik</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Vites</label>
+                            <select class="form-select" @bind="_vehicle.TransmissionType">
+                                <option>Manuel</option><option>Otomatik</option><option>Yarı Otomatik</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Şasi No (VIN)</label>
+                            <input class="form-control" @bind="_vehicle.Vin" style="font-family:monospace" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-light-sm" @onclick="@(() => _editing = false)">İptal</button>
+                    <button class="btn btn-primary" @onclick="SaveVehicle">
+                        <i class="bi bi-check-lg me-1"></i> Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Vehicle? _vehicle;
+    private List<ServiceRecord> _serviceRecords = new();
+    private ServiceRecord? _activeRecord;
+    private bool _editing = false;
+    private bool _statusSaved = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _vehicle = await Store.GetVehicleByIdAsync(Id);
+        _serviceRecords = await Store.GetServiceRecordsByVehicleIdAsync(Id);
+        _activeRecord = _serviceRecords.FirstOrDefault(r => r.Status != ServiceStatus.Delivered);
+    }
+
+    private async Task SaveVehicle()
+    {
+        if (_vehicle == null) return;
+        await Store.UpdateVehicleAsync(_vehicle);
+        _editing = false;
+    }
+
+    private async Task UpdateActiveRecordStatus(ChangeEventArgs e)
+    {
+        if (_activeRecord == null) return;
+        if (Enum.TryParse<ServiceStatus>(e.Value?.ToString(), out var newStatus))
+        {
+            _activeRecord.Status = newStatus;
+            if (newStatus == ServiceStatus.Delivered && !_activeRecord.ExitDate.HasValue)
+                _activeRecord.ExitDate = DateTime.Now;
+            await Store.UpdateServiceRecordAsync(_activeRecord);
+            _statusSaved = true;
+            StateHasChanged();
+            await Task.Delay(2500);
+            _statusSaved = false;
+            StateHasChanged();
+        }
+    }
+
+    private RenderFragment PriorityBadge(ServicePriority p) => p switch
+    {
+        ServicePriority.Urgent => @<span class="badge-priority priority-urgent"><i class="bi bi-exclamation-triangle-fill"></i> ACİL</span>,
+        ServicePriority.High   => @<span class="badge-priority priority-high"><i class="bi bi-arrow-up"></i> Yüksek</span>,
+        _                      => @<span></span>
+    };
+
+    private RenderFragment StatusBadge(ServiceStatus s) => s switch
+    {
+        ServiceStatus.Waiting      => @<span class="badge-status badge-waiting">Bekliyor</span>,
+        ServiceStatus.Diagnosing   => @<span class="badge-status badge-diagnosing">İnceleniyor</span>,
+        ServiceStatus.InProgress   => @<span class="badge-status badge-inprogress">Onarımda</span>,
+        ServiceStatus.WaitingParts => @<span class="badge-status badge-waitingparts">Parça Bekleniyor</span>,
+        ServiceStatus.Completed    => @<span class="badge-status badge-completed">Tamamlandı</span>,
+        ServiceStatus.Delivered    => @<span class="badge-status badge-delivered">Teslim Edildi</span>,
+        _                          => @<span class="badge-status badge-delivered">—</span>
+    };
+}

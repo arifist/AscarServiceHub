@@ -1,0 +1,113 @@
+@page "/vehicles"
+@inject JsonDataStore Store
+@inject NavigationManager Nav
+
+<PageTitle>Araçlar — Ascar Servis</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Araçlar</h1>
+        <p class="page-subtitle">Kayıtlı araçlar ve servis geçmişleri</p>
+    </div>
+    <a href="/vehicles/create" class="btn btn-accent">
+        <i class="bi bi-plus-lg"></i> Yeni Araç
+    </a>
+</div>
+
+<div class="card">
+    <div class="filter-bar">
+        <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input class="form-control" placeholder="Plaka, marka, müşteri ara..." @bind="_search" @bind:event="oninput" />
+        </div>
+        <span class="text-muted fs-13">@_filtered.Count araç</span>
+    </div>
+
+    <div class="table-responsive">
+        @if (_filtered.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="bi bi-car-front"></i></div>
+                <div class="empty-state-title">Araç Bulunamadı</div>
+                <div class="empty-state-text">Henüz araç kaydı yok veya aramanızla eşleşen sonuç yok.</div>
+                <a href="/vehicles/create" class="btn btn-accent mt-3"><i class="bi bi-plus-lg me-1"></i> İlk Aracı Ekle</a>
+            </div>
+        }
+        else
+        {
+            <table class="table-ascar table-clickable">
+                <thead>
+                    <tr>
+                        <th>Araç</th>
+                        <th>Plaka</th>
+                        <th>Yıl</th>
+                        <th>Renk</th>
+                        <th>Yakıt / Vites</th>
+                        <th>Müşteri</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var v in _filtered)
+                    {
+                        <tr @onclick="@(() => Nav.NavigateTo($"/vehicles/{v.Id}"))">
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="vehicle-icon-wrap">
+                                        <i class="bi bi-car-front"></i>
+                                    </div>
+                                    <div>
+                                        <div class="fw-700">@v.Brand @v.Model</div>
+                                        @if (!string.IsNullOrEmpty(v.Vin))
+                                        {
+                                            <div class="fs-12 text-muted">Şasi: @v.Vin.Substring(0, Math.Min(10, v.Vin.Length))...</div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td><span class="plate-badge">@v.Plate</span></td>
+                            <td class="fw-600">@v.Year</td>
+                            <td>@v.Color</td>
+                            <td>
+                                <div class="fs-13">@v.FuelType</div>
+                                <div class="fs-12 text-muted">@v.TransmissionType</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="customer-avatar">@(v.Customer?.FullName?.Substring(0,1) ?? "?")</div>
+                                    <div>
+                                        <div class="fw-600">@v.Customer?.FullName</div>
+                                        <div class="fs-12 text-muted">@v.Customer?.Phone</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td onclick="event.stopPropagation()">
+                                <a href="/vehicles/@v.Id" class="btn btn-icon btn-light-sm" title="Detay">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@code {
+    private List<Vehicle> _all = new();
+    private string _search = "";
+
+    private List<Vehicle> _filtered => _all
+        .Where(v => string.IsNullOrWhiteSpace(_search) ||
+                    v.Plate.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                    v.Brand.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                    v.Model.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                    (v.Customer?.FullName?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _all = await Store.GetVehiclesAsync();
+    }
+}

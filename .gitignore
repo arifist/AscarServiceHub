@@ -1,0 +1,33 @@
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+
+## Build outputs
+[Bb]in/
+[Oo]bj/
+publish/
+
+## Runtime data (JSON files seeded at startup)
+App_Data/
+wwwroot/uploads/
+
+## Logs
+logs/
+*.log
+
+## OS
+.DS_Store
+Thumbs.db
+
+## NuGet
+*.nupkg
+.nuget/
+
+## Publish profiles
+Properties/PublishProfiles/
+
+## Environment config (created on server)
+appsettings.Production.json
+appsettings.Staging.json

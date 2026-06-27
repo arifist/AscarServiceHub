@@ -1,0 +1,726 @@
+@page "/intake"
+@inject JsonDataStore Store
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>Araç Kabulü — Ascar Servis</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Araç Kabulü</h1>
+        <p class="page-subtitle">Müşteri, araç ve hasar bilgilerini tek adımda kaydedin</p>
+    </div>
+    <a href="/" class="btn btn-secondary btn-sm"><i class="bi bi-arrow-left me-1"></i> İptal</a>
+</div>
+
+<!-- Progress Indicator -->
+<div class="intake-progress mb-4">
+    <div class="intake-step @(Step >= 1 ? (Step > 1 ? "done" : "active") : "")">
+        <div class="intake-step-num">
+            @if (Step > 1) { <i class="bi bi-check-lg"></i> } else { <span>1</span> }
+        </div>
+        <div class="intake-step-label">Müşteri</div>
+    </div>
+    <div class="intake-step-sep"></div>
+    <div class="intake-step @(Step >= 2 ? (Step > 2 ? "done" : "active") : "")">
+        <div class="intake-step-num">
+            @if (Step > 2) { <i class="bi bi-check-lg"></i> } else { <span>2</span> }
+        </div>
+        <div class="intake-step-label">Araç</div>
+    </div>
+    <div class="intake-step-sep"></div>
+    <div class="intake-step @(Step >= 3 ? (Step > 3 ? "done" : "active") : "")">
+        <div class="intake-step-num">
+            @if (Step > 3) { <i class="bi bi-check-lg"></i> } else { <span>3</span> }
+        </div>
+        <div class="intake-step-label">Hasar & Servis</div>
+    </div>
+    <div class="intake-step-sep"></div>
+    <div class="intake-step @(Step >= 4 ? "active" : "")">
+        <div class="intake-step-num"><span>4</span></div>
+        <div class="intake-step-label">Fotoğraflar</div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-xl-8">
+
+        <!-- ─── STEP 1: CUSTOMER ────────────────────────────── -->
+        @if (Step == 1)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-person-circle text-accent"></i> Müşteri Bilgileri</div>
+                </div>
+                <div class="card-body">
+                    <!-- Quick search -->
+                    <div class="form-section mb-3">
+                        <div class="form-section-title"><i class="bi bi-search"></i> Mevcut Müşteri Ara</div>
+                        <div class="d-flex gap-2">
+<div class="search-box flex-grow-1">
+    <i class="bi bi-telephone"></i>
+    <input class="form-control" placeholder="Telefon ile ara..." @bind="_phoneSearch" @bind:event="oninput" @bind:after="SearchCustomer" />
+</div>
+                        </div>
+                        @if (_customerResults.Count > 0)
+                        {
+                            <div class="mt-2 border rounded-2 overflow-hidden">
+                                @foreach (var c in _customerResults)
+                                {
+                                    <div class="d-flex align-items-center gap-3 p-2 border-bottom hover-lift"
+                                         style="cursor:pointer; background:var(--surface)"
+                                         @onclick="@(() => SelectCustomer(c))">
+                                        <div class="customer-avatar" style="width:32px;height:32px;font-size:12px">@c.FullName.Substring(0,1)</div>
+                                        <div>
+                                            <div class="fw-600 fs-13">@c.FullName</div>
+                                            <div class="fs-12 text-muted">@c.Phone @(c.Email != null ? "• "+c.Email : "")</div>
+                                        </div>
+                                        <div class="ms-auto"><i class="bi bi-arrow-right text-accent"></i></div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    @if (_selectedCustomer != null)
+                    {
+                        <div class="info-box info-box-green mb-3">
+                            <i class="bi bi-check-circle-fill fs-15"></i>
+                            <div>
+                                <div class="fw-600">@_selectedCustomer.FullName seçildi</div>
+                                <div class="fs-12">@_selectedCustomer.Phone @(_selectedCustomer.Email != null ? "• " + _selectedCustomer.Email : "")</div>
+                            </div>
+                            <button class="btn btn-xs btn-secondary ms-auto" @onclick="ClearCustomer">Değiştir</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="form-section-title" style="border-top:1px solid var(--border-color); padding-top:16px">
+                            <i class="bi bi-person-plus"></i> Yeni Müşteri Bilgileri
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label">Ad Soyad <span class="text-danger">*</span></label>
+                                <input class="form-control" placeholder="Ahmet Yılmaz" @bind="_newCustomer.FullName" />
+                                @if (_step1Submitted && string.IsNullOrWhiteSpace(_newCustomer.FullName) && _selectedCustomer == null)
+                                { <div class="text-danger fs-12 mt-1">Zorunlu alan.</div> }
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">Telefon <span class="text-danger">*</span></label>
+                                <input class="form-control" placeholder="0532 111 2233" @bind="_newCustomer.Phone" />
+                                @if (_step1Submitted && string.IsNullOrWhiteSpace(_newCustomer.Phone) && _selectedCustomer == null)
+                                { <div class="text-danger fs-12 mt-1">Zorunlu alan.</div> }
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">E-posta</label>
+                                <input class="form-control" placeholder="ornek@mail.com" @bind="_newCustomer.Email" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">Firma (isteğe bağlı)</label>
+                                <input class="form-control" placeholder="Şirket / işletme adı" @bind="_newCustomer.CompanyName" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Adres</label>
+                                <textarea class="form-control" rows="2" placeholder="Mahalle, ilçe / il" @bind="_newCustomer.Address"></textarea>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-end mt-4">
+                        <button class="btn btn-primary" @onclick="NextStep1">
+                            İleri: Araç Bilgileri <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- ─── STEP 2: VEHICLE ─────────────────────────────── -->
+        @if (Step == 2)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-car-front text-accent"></i> Araç Bilgileri</div>
+                </div>
+                <div class="card-body">
+                    <!-- Plate search -->
+                    <div class="form-section mb-3">
+                        <div class="form-section-title"><i class="bi bi-search"></i> Plakayla Mevcut Araç Ara</div>
+ <div class="d-flex gap-2">
+    <input class="form-control" placeholder="örn: 34 AKL 123"
+           style="font-family:monospace;font-weight:700;text-transform:uppercase"
+           @bind="_plateSearch" @bind:event="oninput" @bind:after="SearchVehicle" />
+</div>
+                        @if (_vehicleResults.Count > 0)
+                        {
+                            <div class="mt-2 border rounded-2 overflow-hidden">
+                                @foreach (var v in _vehicleResults)
+                                {
+                                    <div class="d-flex align-items-center gap-3 p-2 border-bottom"
+                                         style="cursor:pointer; background:var(--surface)"
+                                         @onclick="@(() => SelectVehicle(v))">
+                                        <div class="vehicle-icon"><i class="bi bi-car-front"></i></div>
+                                        <div>
+                                            <div class="fw-600 fs-13">@v.Brand @v.Model (@v.Year)</div>
+                                            <span class="plate-badge" style="font-size:11px; padding:1px 6px">@v.Plate</span>
+                                            <span class="fs-12 text-muted ms-2">@v.Customer?.FullName</span>
+                                        </div>
+                                        <div class="ms-auto"><i class="bi bi-arrow-right text-accent"></i></div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+
+                    @if (_selectedVehicle != null)
+                    {
+                        <div class="info-box info-box-green mb-3">
+                            <i class="bi bi-check-circle-fill fs-15"></i>
+                            <div>
+                                <div class="fw-600">@_selectedVehicle.Brand @_selectedVehicle.Model seçildi</div>
+                                <div class="d-flex align-items-center gap-2 mt-1">
+                                    <span class="plate-badge" style="font-size:11px;padding:1px 6px">@_selectedVehicle.Plate</span>
+                                    <span class="fs-12 text-muted">@_selectedVehicle.Year • @_selectedVehicle.Color</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-xs btn-secondary ms-auto" @onclick="ClearVehicle">Değiştir</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="form-section-title" style="border-top:1px solid var(--border-color); padding-top:16px">
+                            <i class="bi bi-plus-circle"></i> Yeni Araç Bilgileri
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label">Plaka <span class="text-danger">*</span></label>
+                                <input class="form-control" placeholder="34 AKL 123"
+                                       style="font-family:monospace;font-weight:700;text-transform:uppercase"
+                                       @bind="_newVehicle.Plate" />
+                                @if (_step2Submitted && string.IsNullOrWhiteSpace(_newVehicle.Plate))
+                                { <div class="text-danger fs-12 mt-1">Zorunlu alan.</div> }
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">Şasi No (VIN)</label>
+                                <input class="form-control" placeholder="opsiyonel" @bind="_newVehicle.Vin" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">Marka <span class="text-danger">*</span></label>
+                                <select class="form-select" @bind="_newVehicle.Brand">
+                                    <option value="">— Seçin —</option>
+                                    @foreach (var b in CarBrands) { <option>@b</option> }
+                                </select>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">Model <span class="text-danger">*</span></label>
+                                <input class="form-control" placeholder="Corolla, Focus..." @bind="_newVehicle.Model" />
+                            </div>
+                            <div class="col-sm-3">
+                                <label class="form-label">Yıl</label>
+                                <input class="form-control" type="number" min="1990" max="2030" @bind="_newVehicle.Year" />
+                            </div>
+                            <div class="col-sm-3">
+                                <label class="form-label">Renk</label>
+                                <select class="form-select" @bind="_newVehicle.Color">
+                                    <option value="">—</option>
+                                    <option>Beyaz</option><option>Siyah</option><option>Gri</option><option>Gümüş</option>
+                                    <option>Mavi</option><option>Kırmızı</option><option>Lacivert</option>
+                                    <option>Yeşil</option><option>Sarı</option><option>Kahverengi</option><option>Diğer</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-3">
+                                <label class="form-label">Yakıt</label>
+                                <select class="form-select" @bind="_newVehicle.FuelType">
+                                    <option value="">—</option>
+                                    <option>Benzin</option><option>Dizel</option><option>LPG</option>
+                                    <option>Hybrid</option><option>Elektrik</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-3">
+                                <label class="form-label">Vites</label>
+                                <select class="form-select" @bind="_newVehicle.TransmissionType">
+                                    <option value="">—</option>
+                                    <option>Manuel</option><option>Otomatik</option><option>Yarı Otomatik</option>
+                                </select>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <button class="btn btn-secondary" @onclick="@(() => Step = 1)">
+                            <i class="bi bi-arrow-left me-1"></i> Geri
+                        </button>
+                        <button class="btn btn-primary" @onclick="NextStep2">
+                            İleri: Hasar Bilgisi <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- ─── STEP 3: SERVICE RECORD ──────────────────────── -->
+        @if (Step == 3)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-clipboard2 text-accent"></i> Hasar & Servis Bilgileri</div>
+                </div>
+                <div class="card-body">
+
+                    <div class="form-section mb-3">
+                        <div class="form-section-title"><i class="bi bi-chat-left-text"></i> Müşteri Beyanı</div>
+                        <div class="mb-3">
+                            <label class="form-label">Müşteri Şikayeti <span class="text-danger">*</span></label>
+                            <textarea class="form-control" rows="3"
+                                      placeholder="Müşterinin kendi ifadesiyle anlattığı sorun/şikayet..."
+                                      @bind="_record.CustomerComplaint"></textarea>
+                            @if (_step3Submitted && string.IsNullOrWhiteSpace(_record.CustomerComplaint))
+                            { <div class="text-danger fs-12 mt-1">Müşteri beyanı zorunludur.</div> }
+                        </div>
+                    </div>
+
+                    <div class="form-section mb-3">
+                        <div class="form-section-title"><i class="bi bi-tools"></i> Teknik Tespit & Hasar</div>
+                        <div class="mb-3">
+                            <label class="form-label">Teknik Hasar Tespiti</label>
+                            <textarea class="form-control" rows="3"
+                                      placeholder="Serviste yapılan ön kontrolde tespit edilen hasarlar..."
+                                      @bind="_record.DamageDescription"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ön Kontrol Notları</label>
+                            <textarea class="form-control" rows="2"
+                                      placeholder="Mevcut çizikler, eski hasarlar — müşteriye gösterildi..."
+                                      @bind="_record.PreInspectionNotes"></textarea>
+                            <div class="field-note">Araçta önceden var olan, müşterinin kabul ettiği hasarları yazın.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-section mb-3">
+                        <div class="form-section-title"><i class="bi bi-gear"></i> Servis Detayları</div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label">Öncelik</label>
+                                <select class="form-select" @bind="_record.Priority">
+                                    <option value="@ServicePriority.Low">Düşük</option>
+                                    <option value="@ServicePriority.Normal" selected>Normal</option>
+                                    <option value="@ServicePriority.High">Yüksek</option>
+                                    <option value="@ServicePriority.Urgent">Acil</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">Teknisyen</label>
+                                <select class="form-select" @bind="_record.AssignedTechnician">
+                                    <option value="">— Atanmadı —</option>
+                                    <option>Kadir Usta</option>
+                                    <option>Murat Teknisyen</option>
+                                    <option>Serkan Boyacı</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label">Giriş Km</label>
+                                <input class="form-control" type="number" placeholder="87450" @bind="_record.EntryMileage" />
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label">Tahmini Maliyet (₺)</label>
+                                <input class="form-control" type="number" step="100" placeholder="0" @bind="_record.EstimatedCost" />
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label">Tahmini Teslim</label>
+                                <input class="form-control" type="date" @bind="_record.EstimatedDeliveryDate" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">Atölye Konumu</label>
+                                <select class="form-select" @bind="_record.ParkingSpot">
+                                    <option value="">— Atanmadı —</option>
+                                    <option>Kabin 1</option><option>Kabin 2</option><option>Kabin 3</option>
+                                    <option>Kabin 4</option><option>Açık Alan A</option><option>Açık Alan B</option><option>Açık Alan C</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section mb-3">
+                        <div class="form-section-title"><i class="bi bi-shield-check"></i> Sigorta Bilgisi</div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="hasInsurance" @bind="_record.HasInsurance" />
+                                <label class="form-check-label fw-600 fs-13" for="hasInsurance">Sigorta kapsamında</label>
+                            </div>
+                        </div>
+                        @if (_record.HasInsurance)
+                        {
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="form-label">Sigorta Şirketi</label>
+                                    <select class="form-select" @bind="_record.InsuranceCompany">
+                                        <option value="">— Seçin —</option>
+                                        <option>Allianz</option><option>AXA</option><option>Anadolu Sigorta</option>
+                                        <option>Güneş Sigorta</option><option>Mapfre</option><option>Sompo Sigorta</option>
+                                        <option>Unico Sigorta</option><option>Diğer</option>
+                                    </select>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label">Poliçe Numarası</label>
+                                    <input class="form-control" placeholder="TR-2026-XXXXX" @bind="_record.InsurancePolicyNo" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <button class="btn btn-secondary" @onclick="@(() => Step = 2)">
+                            <i class="bi bi-arrow-left me-1"></i> Geri
+                        </button>
+                        <button class="btn btn-primary" @onclick="NextStep3">
+                            İleri: Fotoğraflar <i class="bi bi-arrow-right ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- ─── STEP 4: PHOTOS ──────────────────────────────── -->
+        @if (Step == 4)
+        {
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-images text-accent"></i> Giriş Fotoğrafları</div>
+                    <span class="fs-12 text-muted">İsteğe bağlı — daha sonra da ekleyebilirsiniz</span>
+                </div>
+                <div class="card-body">
+                    @if (_pendingPhotos.Count > 0)
+                    {
+                        <div class="photo-grid mb-3">
+                            @foreach (var (info, area) in _pendingPhotos)
+                            {
+                                <div class="photo-item">
+                                    <div class="d-flex flex-column align-items-center justify-content-center h-100 p-2">
+                                        <i class="bi bi-image text-muted" style="font-size:28px"></i>
+                                        <div class="fs-12 text-muted mt-1 text-center">@info.Name</div>
+                                        <div class="fs-11" style="color:var(--accent)">@area</div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    <div class="photo-drop-zone" @onclick="TriggerPhotoInput">
+                        <div class="photo-drop-icon"><i class="bi bi-camera-fill"></i></div>
+                        <div class="fw-600 mb-1">Fotoğraf Ekle</div>
+                        <div class="fs-12 text-muted">Tıkla veya kameradan çek (JPG, PNG • maks 10MB)</div>
+                    </div>
+
+                    <InputFile id="intakePhotoInput" OnChange="AddPendingPhotos" accept="image/*"
+                               capture="environment" multiple style="display:none" />
+
+                    <div class="mt-3">
+                        <label class="form-label">Fotoğraf Bölgesi</label>
+                        <select class="form-select" @bind="_photoArea">
+                            <option>Ön Genel</option><option>Ön Sol</option><option>Ön Sağ</option>
+                            <option>Arka Genel</option><option>Arka Sol</option><option>Arka Sağ</option>
+                            <option>Sol Yan</option><option>Sağ Yan</option>
+                            <option>Kaput</option><option>Çatı</option><option>Motor</option><option>İç Mekan</option>
+                        </select>
+                    </div>
+
+                    @if (_pendingPhotos.Count > 0)
+                    {
+                        <div class="info-box info-box-blue mt-3">
+                            <i class="bi bi-info-circle"></i>
+                            <span>@_pendingPhotos.Count fotoğraf seçildi. Kaydedince sisteme yüklenecek.</span>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <button class="btn btn-secondary" @onclick="@(() => Step = 3)">
+                            <i class="bi bi-arrow-left me-1"></i> Geri
+                        </button>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-secondary" @onclick="SubmitIntake" disabled="@_saving">
+                                Fotoğrafsız Kaydet
+                            </button>
+                            <button class="btn btn-primary" @onclick="SubmitIntake" disabled="@_saving">
+                                @if (_saving) {
+                                    <span class="spinner-border spinner-border-sm me-1"></span>
+                                }
+                                <i class="bi bi-check-lg me-1"></i> Kabulü Tamamla
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Summary Sidebar -->
+    <div class="col-12 col-xl-4">
+        <div class="card" style="position:sticky; top:80px">
+            <div class="card-header">
+                <div class="card-title"><i class="bi bi-receipt text-accent"></i> Özet</div>
+            </div>
+            <div class="card-body">
+                <!-- Customer -->
+                <div class="mb-3">
+                    <div class="text-muted-sm mb-1 text-uppercase fw-700" style="font-size:10px; letter-spacing:0.8px">MÜŞTERİ</div>
+                    @if (_selectedCustomer != null)
+                    {
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="customer-avatar" style="width:30px;height:30px;font-size:11px">
+                                @_selectedCustomer.FullName.Substring(0,1)
+                            </div>
+                            <div>
+                                <div class="fw-600 fs-13">@_selectedCustomer.FullName</div>
+                                <div class="fs-12 text-muted">@_selectedCustomer.Phone</div>
+                            </div>
+                        </div>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(_newCustomer.FullName))
+                    {
+                        <div class="fw-600 fs-13">@_newCustomer.FullName <span class="tag ms-1" style="font-size:10px">Yeni</span></div>
+                        <div class="fs-12 text-muted">@_newCustomer.Phone</div>
+                    }
+                    else
+                    {
+                        <div class="text-muted fs-12">Henüz seçilmedi</div>
+                    }
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Vehicle -->
+                <div class="mb-3">
+                    <div class="text-muted-sm mb-1 text-uppercase fw-700" style="font-size:10px; letter-spacing:0.8px">ARAÇ</div>
+                    @if (_selectedVehicle != null)
+                    {
+                        <div class="fw-600 fs-13">@_selectedVehicle.Brand @_selectedVehicle.Model</div>
+                        <span class="plate-badge" style="font-size:11px;padding:2px 7px">@_selectedVehicle.Plate</span>
+                        <span class="fs-12 text-muted ms-2">@_selectedVehicle.Year</span>
+                    }
+                    else if (!string.IsNullOrWhiteSpace(_newVehicle.Plate))
+                    {
+                        <div class="fw-600 fs-13">@_newVehicle.Brand @_newVehicle.Model <span class="tag ms-1" style="font-size:10px">Yeni</span></div>
+                        <span class="plate-badge" style="font-size:11px;padding:2px 7px">@_newVehicle.Plate</span>
+                    }
+                    else
+                    {
+                        <div class="text-muted fs-12">Henüz seçilmedi</div>
+                    }
+                </div>
+
+                <div class="divider"></div>
+
+                <!-- Record -->
+                <div class="mb-0">
+                    <div class="text-muted-sm mb-1 text-uppercase fw-700" style="font-size:10px; letter-spacing:0.8px">SERVİS</div>
+                    @if (!string.IsNullOrWhiteSpace(_record.CustomerComplaint))
+                    {
+                        <div class="fs-12" style="line-height:1.6; max-height:60px; overflow:hidden; text-overflow:ellipsis">
+                            @_record.CustomerComplaint
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted fs-12">Henüz girilmedi</div>
+                    }
+                    @if (_record.Priority == ServicePriority.Urgent)
+                    {
+                        <div class="mt-2"><span class="badge-priority priority-urgent"><i class="bi bi-exclamation-triangle-fill"></i> ACİL</span></div>
+                    }
+                    else if (_record.Priority == ServicePriority.High)
+                    {
+                        <div class="mt-2"><span class="badge-priority priority-high"><i class="bi bi-arrow-up"></i> Yüksek</span></div>
+                    }
+                    @if (_record.EstimatedCost > 0)
+                    {
+                        <div class="mt-2 fw-700 fs-15">~@_record.EstimatedCost.ToString("N0") ₺</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private int Step = 1;
+
+    // Customer
+    private string _phoneSearch = "";
+    private List<Customer> _customerResults = new();
+    private Customer? _selectedCustomer;
+    private Customer _newCustomer = new();
+    private bool _step1Submitted = false;
+
+    // Vehicle
+    private string _plateSearch = "";
+    private List<Vehicle> _vehicleResults = new();
+    private Vehicle? _selectedVehicle;
+    private Vehicle _newVehicle = new() { Year = DateTime.Now.Year };
+    private bool _step2Submitted = false;
+
+    // Service Record
+    private ServiceRecord _record = new() { Priority = ServicePriority.Normal, Status = ServiceStatus.Waiting };
+    private bool _step3Submitted = false;
+
+    // Photos
+    private List<(IBrowserFile Info, string Area)> _pendingPhotos = new();
+    private string _photoArea = "Ön Genel";
+
+    private bool _saving = false;
+
+    private List<Customer> _allCustomers = new();
+    private List<Vehicle> _allVehicles = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _allCustomers = await Store.GetCustomersAsync();
+        _allVehicles = await Store.GetVehiclesAsync();
+    }
+
+    private void SearchCustomer()
+    {
+        if (string.IsNullOrWhiteSpace(_phoneSearch) || _phoneSearch.Length < 3)
+        { _customerResults = new(); return; }
+
+        var q = _phoneSearch.Replace(" ", "").Replace("-", "");
+        _customerResults = _allCustomers
+            .Where(c => c.Phone.Replace(" ", "").Replace("-", "").Contains(q) ||
+                        c.FullName.Contains(_phoneSearch, StringComparison.OrdinalIgnoreCase))
+            .Take(4).ToList();
+    }
+
+    private void SelectCustomer(Customer c)
+    {
+        _selectedCustomer = c;
+        _customerResults = new();
+        _phoneSearch = "";
+    }
+
+    private void ClearCustomer()
+    {
+        _selectedCustomer = null;
+        _newCustomer = new();
+    }
+
+    private void SearchVehicle()
+    {
+        if (string.IsNullOrWhiteSpace(_plateSearch) || _plateSearch.Length < 2)
+        { _vehicleResults = new(); return; }
+
+        var q = _plateSearch.Replace(" ", "").ToUpperInvariant();
+        _vehicleResults = _allVehicles
+            .Where(v => v.Plate.Replace(" ", "").ToUpperInvariant().Contains(q) ||
+                        v.Brand.Contains(_plateSearch, StringComparison.OrdinalIgnoreCase) ||
+                        v.Model.Contains(_plateSearch, StringComparison.OrdinalIgnoreCase))
+            .Take(4).ToList();
+    }
+
+    private void SelectVehicle(Vehicle v)
+    {
+        _selectedVehicle = v;
+        _vehicleResults = new();
+        _plateSearch = "";
+    }
+
+    private void ClearVehicle()
+    {
+        _selectedVehicle = null;
+        _newVehicle = new() { Year = DateTime.Now.Year };
+    }
+
+    private void NextStep1()
+    {
+        _step1Submitted = true;
+        if (_selectedCustomer == null &&
+            (string.IsNullOrWhiteSpace(_newCustomer.FullName) || string.IsNullOrWhiteSpace(_newCustomer.Phone)))
+            return;
+        Step = 2;
+    }
+
+    private void NextStep2()
+    {
+        _step2Submitted = true;
+        if (_selectedVehicle == null && string.IsNullOrWhiteSpace(_newVehicle.Plate))
+            return;
+        Step = 3;
+    }
+
+    private void NextStep3()
+    {
+        _step3Submitted = true;
+        if (string.IsNullOrWhiteSpace(_record.CustomerComplaint))
+            return;
+        Step = 4;
+    }
+
+private void AddPendingPhotos(InputFileChangeEventArgs e)
+{
+    foreach (var f in e.GetMultipleFiles(10))
+        _pendingPhotos.Add((f, _photoArea));
+}
+
+    private async Task TriggerPhotoInput()
+    {
+        await JS.InvokeVoidAsync("eval", "document.getElementById('intakePhotoInput').click()");
+    }
+
+    private async Task SubmitIntake()
+    {
+        _saving = true;
+        try
+        {
+            // 1. Customer
+            var customer = _selectedCustomer ?? await Store.AddCustomerAsync(_newCustomer);
+
+            // 2. Vehicle
+            Vehicle vehicle;
+            if (_selectedVehicle != null)
+            {
+                vehicle = _selectedVehicle;
+            }
+            else
+            {
+                _newVehicle.CustomerId = customer.Id;
+                _newVehicle.Plate = _newVehicle.Plate.ToUpperInvariant().Trim();
+                vehicle = await Store.AddVehicleAsync(_newVehicle);
+            }
+
+            // 3. Service Record
+            _record.VehicleId = vehicle.Id;
+            var created = await Store.AddServiceRecordAsync(_record);
+
+            // 4. Photos
+            if (_pendingPhotos.Count > 0)
+            {
+                var uploadsDir = Path.Combine("wwwroot", "uploads");
+                Directory.CreateDirectory(uploadsDir);
+
+                foreach (var (file, area) in _pendingPhotos)
+                {
+                    var ext = Path.GetExtension(file.Name);
+                    var fileName = $"sr{created.Id}_{Guid.NewGuid():N}{ext}";
+                    await using var fs = new FileStream(Path.Combine(uploadsDir, fileName), FileMode.Create);
+                    await file.OpenReadStream(10 * 1024 * 1024).CopyToAsync(fs);
+                    await Store.AddPhotoAsync(new DamagePhoto
+                    {
+                        ServiceRecordId = created.Id,
+                        FileName = fileName,
+                        OriginalFileName = file.Name,
+                        DamageAreaLabel = area,
+                        FileSizeBytes = file.Size
+                    });
+                }
+            }
+
+            Nav.NavigateTo($"/service-records/{created.Id}");
+        }
+        finally { _saving = false; }
+    }
+
+    private static readonly string[] CarBrands =
+    {
+        "Toyota","Ford","Renault","Volkswagen","Fiat","Honda","Hyundai","Opel","Peugeot",
+        "Citroën","Nissan","Kia","Dacia","Mercedes","BMW","Audi","Seat","Skoda","Volvo",
+        "Mazda","Suzuki","Mitsubishi","Land Rover","Jeep","Diğer"
+    };
+}

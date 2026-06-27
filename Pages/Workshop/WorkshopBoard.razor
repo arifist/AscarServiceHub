@@ -1,0 +1,169 @@
+@page "/workshop"
+@inject JsonDataStore Store
+@inject NavigationManager Nav
+
+<PageTitle>Atölye Durumu — Ascar Servis</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Atölye Durumu</h1>
+        <p class="page-subtitle">Gerçek zamanlı araç takip panosu — @_records.Count aktif servis</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a href="/intake" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i> Araç Kabul
+        </a>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <div class="loading-spinner"><div class="spinner-border text-accent" role="status"></div></div>
+}
+else
+{
+    <!-- Board -->
+    <div class="workshop-board">
+        @foreach (var col in Columns)
+        {
+            var colRecords = _records.Where(r => r.Status == col.Status).ToList();
+            <div class="workshop-column">
+                <div class="workshop-col-header" style="border-left:3px solid @col.Color">
+                    <span class="status-dot" style="background:@col.Color"></span>
+                    <span class="workshop-col-title">@col.Title</span>
+                    <span class="workshop-col-count">@colRecords.Count</span>
+                </div>
+
+                @if (colRecords.Count == 0)
+                {
+                    <div class="text-center text-muted py-4 px-3 fs-12">
+                        <i class="bi bi-inbox" style="font-size:22px;opacity:0.3"></i><br/>
+                        <span class="mt-1 d-block">Araç yok</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var r in colRecords)
+                    {
+                        <div class="vehicle-card" @onclick="@(() => Nav.NavigateTo($"/service-records/{r.Id}"))"
+                             style="border-left-color:@(r.Priority == ServicePriority.Urgent ? "#ef4444" : r.Priority == ServicePriority.High ? "#f59e0b" : "transparent")">
+
+                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                <span class="vehicle-card-plate">@r.Vehicle?.Plate</span>
+                                @if (r.Priority == ServicePriority.Urgent)
+                                {
+                                    <span class="badge-priority priority-urgent" style="font-size:9px; padding:1px 5px">
+                                        <i class="bi bi-exclamation-triangle-fill"></i> ACİL
+                                    </span>
+                                }
+                                else if (r.Priority == ServicePriority.High)
+                                {
+                                    <span class="badge-priority priority-high" style="font-size:9px; padding:1px 5px">
+                                        <i class="bi bi-arrow-up"></i> Yüksek
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="vehicle-card-model">@r.Vehicle?.Brand @r.Vehicle?.Model</div>
+                            <div class="vehicle-card-year">@r.Vehicle?.Year • @r.Vehicle?.Color</div>
+
+                            <div class="vehicle-card-meta mt-2">
+                                @if (!string.IsNullOrEmpty(r.AssignedTechnician))
+                                {
+                                    <span class="vehicle-card-badge"><i class="bi bi-person-badge"></i> @r.AssignedTechnician</span>
+                                }
+                                @if (!string.IsNullOrEmpty(r.ParkingSpot))
+                                {
+                                    <span class="vehicle-card-badge"><i class="bi bi-geo-alt"></i> @r.ParkingSpot</span>
+                                }
+                            </div>
+
+                            <div class="vehicle-card-footer mt-2">
+                                <span class="fs-11 text-muted">
+                                    <i class="bi bi-clock me-1"></i>@r.DaysInWorkshop gün
+                                </span>
+                                @if (r.Vehicle?.Customer != null)
+                                {
+                                    <span class="fs-11 text-muted">
+                                        <i class="bi bi-person me-1"></i>@r.Vehicle.Customer.FullName.Split(' ')[0]
+                                    </span>
+                                }
+                                @if (r.HasInsurance)
+                                {
+                                    <span class="fs-11" style="color:#10b981"><i class="bi bi-shield-check me-1"></i>Sigorta</span>
+                                }
+                            </div>
+
+                            @if (r.EstimatedDeliveryDate.HasValue)
+                            {
+                                var overdue = r.EstimatedDeliveryDate.Value < DateTime.Now;
+                                <div class="mt-1 fs-11 @(overdue ? "text-danger fw-600" : "text-muted")">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    @(overdue ? "GECİKTİ: " : "Teslim: ")@r.EstimatedDeliveryDate.Value.ToString("dd.MM")
+                                </div>
+                            }
+
+                            <!-- Quick Status Change -->
+                            <div class="mt-2">
+                                <select class="form-select" style="font-size:11px; padding:3px 6px; height:auto"
+                                        value="@r.Status"
+                                        @onchange="@(e => QuickUpdateStatus(r, e))">
+                                    <option value="@ServiceStatus.Waiting">Bekliyor</option>
+                                    <option value="@ServiceStatus.Diagnosing">İnceleniyor</option>
+                                    <option value="@ServiceStatus.InProgress">Onarımda</option>
+                                    <option value="@ServiceStatus.WaitingParts">Parça Bekleniyor</option>
+                                    <option value="@ServiceStatus.Completed">Tamamlandı</option>
+                                    <option value="@ServiceStatus.Delivered">Teslim Edildi</option>
+                                </select>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        }
+    </div>
+
+    @if (_records.Count == 0)
+    {
+        <div class="empty-state mt-4">
+            <div class="empty-state-icon"><i class="bi bi-layout-three-columns"></i></div>
+            <div class="empty-state-title">Atölye Boş</div>
+            <div class="empty-state-text">Şu anda aktif servis kaydı bulunmuyor. Yeni araç kabulü yapabilirsiniz.</div>
+            <a href="/intake" class="btn btn-primary mt-3"><i class="bi bi-plus me-1"></i> Araç Kabul</a>
+        </div>
+    }
+}
+
+@code {
+    private List<ServiceRecord> _records = new();
+    private bool _loading = true;
+
+    private record BoardColumn(ServiceStatus Status, string Title, string Color);
+
+    private static readonly BoardColumn[] Columns =
+    {
+        new(ServiceStatus.Waiting,      "Bekliyor",           "#f59e0b"),
+        new(ServiceStatus.Diagnosing,   "İnceleniyor",        "#8b5cf6"),
+        new(ServiceStatus.InProgress,   "Onarımda",           "#3b82f6"),
+        new(ServiceStatus.WaitingParts, "Parça Bekleniyor",   "#f97316"),
+        new(ServiceStatus.Completed,    "Tamamlandı",         "#10b981"),
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _records = await Store.GetActiveServiceRecordsAsync();
+        _loading = false;
+    }
+
+    private async Task QuickUpdateStatus(ServiceRecord record, ChangeEventArgs e)
+    {
+        if (Enum.TryParse<ServiceStatus>(e.Value?.ToString(), out var newStatus))
+        {
+            record.Status = newStatus;
+            if (newStatus == ServiceStatus.Delivered && !record.ExitDate.HasValue)
+                record.ExitDate = DateTime.Now;
+            await Store.UpdateServiceRecordAsync(record);
+            _records = await Store.GetActiveServiceRecordsAsync();
+        }
+    }
+}

@@ -1,0 +1,159 @@
+@page "/customers"
+@inject JsonDataStore Store
+@inject NavigationManager Nav
+
+<PageTitle>Müşteriler — Ascar Servis</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Müşteriler</h1>
+        <p class="page-subtitle">Kayıtlı müşteriler ve araçları</p>
+    </div>
+    <a href="/customers/create" class="btn btn-accent">
+        <i class="bi bi-person-plus"></i> Yeni Müşteri
+    </a>
+</div>
+
+<div class="card">
+    <div class="filter-bar">
+        <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input class="form-control" placeholder="İsim, telefon ara..." @bind="_search" @bind:event="oninput" />
+        </div>
+        <span class="text-muted fs-13">@_filtered.Count müşteri</span>
+    </div>
+
+    <div class="table-responsive">
+        @if (_filtered.Count == 0)
+        {
+            <div class="empty-state">
+                <div class="empty-state-icon"><i class="bi bi-people"></i></div>
+                <div class="empty-state-title">Müşteri Bulunamadı</div>
+                <a href="/customers/create" class="btn btn-accent mt-3"><i class="bi bi-person-plus me-1"></i> İlk Müşteriyi Ekle</a>
+            </div>
+        }
+        else
+        {
+            <table class="table-ascar">
+                <thead>
+                    <tr>
+                        <th>Müşteri</th>
+                        <th>Telefon</th>
+                        <th>E-posta</th>
+                        <th>Adres</th>
+                        <th>Kayıt Tarihi</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in _filtered)
+                    {
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="customer-avatar">@c.FullName.Substring(0, 1)</div>
+                                    <div>
+                                        <div class="fw-700">@c.FullName</div>
+                                        @if (!string.IsNullOrEmpty(c.CompanyName))
+                                        {
+                                            <div class="fs-12 text-muted"><i class="bi bi-building me-1"></i>@c.CompanyName</div>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <a href="tel:@c.Phone" class="text-decoration-none fw-600 text-accent">
+                                    <i class="bi bi-telephone me-1"></i>@c.Phone
+                                </a>
+                            </td>
+                            <td class="text-muted fs-13">@(c.Email ?? "—")</td>
+                            <td class="text-muted fs-13" style="max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+                                @(c.Address ?? "—")
+                            </td>
+                            <td class="text-muted fs-13">@c.CreatedAt.ToString("dd.MM.yyyy")</td>
+                            <td>
+                                <button class="btn btn-icon btn-light-sm" @onclick="@(() => StartEdit(c))" title="Düzenle">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>
+
+@if (_editing != null)
+{
+    <div class="modal show d-block" style="background:rgba(0,0,0,0.5)">
+        <div class="modal-dialog">
+            <div class="modal-content" style="border-radius:var(--radius-lg); border:none">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-700">Müşteri Düzenle</h5>
+                    <button type="button" class="btn-close" @onclick="@(() => _editing = null)"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Ad Soyad</label>
+                        <input class="form-control" @bind="_editing.FullName" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Telefon</label>
+                        <input class="form-control" @bind="_editing.Phone" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">E-posta</label>
+                        <input class="form-control" @bind="_editing.Email" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Adres</label>
+                        <textarea class="form-control" rows="2" @bind="_editing.Address"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button class="btn btn-light-sm" @onclick="@(() => _editing = null)">İptal</button>
+                    <button class="btn btn-accent" @onclick="SaveEdit">
+                        <i class="bi bi-check-lg me-1"></i> Kaydet
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Customer> _all = new();
+    private string _search = "";
+    private Customer? _editing;
+
+    private List<Customer> _filtered => _all
+        .Where(c => string.IsNullOrWhiteSpace(_search) ||
+                    c.FullName.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                    c.Phone.Contains(_search, StringComparison.OrdinalIgnoreCase) ||
+                    (c.Email?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false))
+        .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _all = await Store.GetCustomersAsync();
+    }
+
+    private void StartEdit(Customer c)
+    {
+        _editing = new Customer
+        {
+            Id = c.Id, FullName = c.FullName, Phone = c.Phone,
+            Email = c.Email, Address = c.Address, CompanyName = c.CompanyName,
+            TaxNumber = c.TaxNumber, CreatedAt = c.CreatedAt
+        };
+    }
+
+    private async Task SaveEdit()
+    {
+        if (_editing == null) return;
+        await Store.UpdateCustomerAsync(_editing);
+        _all = await Store.GetCustomersAsync();
+        _editing = null;
+    }
+}

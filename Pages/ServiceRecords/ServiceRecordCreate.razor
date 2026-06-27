@@ -1,0 +1,155 @@
+@page "/service-records/create"
+@inject JsonDataStore Store
+@inject NavigationManager Nav
+
+<PageTitle>Yeni Servis Kaydı — Ascar Servis</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Yeni Servis Kaydı</h1>
+        <p class="page-subtitle">Gelen araç için servis kaydı oluşturun</p>
+    </div>
+    <a href="/service-records" class="btn btn-light-sm">
+        <i class="bi bi-arrow-left me-1"></i> Geri
+    </a>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <EditForm Model="_record" OnValidSubmit="HandleSubmit">
+                    <DataAnnotationsValidator />
+
+                    <!-- Araç Seçimi -->
+                    <div class="form-section-title"><i class="bi bi-car-front me-2"></i>Araç Bilgileri</div>
+
+                    @if (_vehicles.Count == 0)
+                    {
+                        <div class="alert alert-warning d-flex align-items-center gap-2 mb-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span>Kayıtlı araç bulunamadı. <a href="/vehicles/create">Önce araç ekleyin.</a></span>
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label">Araç Seçin <span class="text-danger">*</span></label>
+                        <select class="form-select" @bind="_record.VehicleId">
+                            <option value="0">— Araç Seçin —</option>
+                            @foreach (var v in _vehicles)
+                            {
+                                <option value="@v.Id">@v.Plate — @v.Brand @v.Model (@v.Year) — @v.Customer?.FullName</option>
+                            }
+                        </select>
+                        @if (_submitted && _record.VehicleId == 0)
+                        {
+                            <div class="text-danger fs-12 mt-1"><i class="bi bi-exclamation-circle me-1"></i>Lütfen araç seçin.</div>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Giriş Km</label>
+                        <input class="form-control" type="number" placeholder="örn: 87450" @bind="_record.EntryMileage" />
+                    </div>
+
+                    <!-- Hasar / Şikayet -->
+                    <div class="form-section-title mt-4"><i class="bi bi-clipboard2 me-2"></i>Hasar / Şikayet Bilgisi</div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Hasar / Arıza Açıklaması <span class="text-danger">*</span></label>
+                        <textarea class="form-control" rows="4"
+                                  placeholder="Müşterinin belirttiği sorunları ve gözlemlenen hasarları buraya yazın..."
+                                  @bind="_record.DamageDescription"></textarea>
+                        @if (_submitted && string.IsNullOrWhiteSpace(_record.DamageDescription))
+                        {
+                            <div class="text-danger fs-12 mt-1"><i class="bi bi-exclamation-circle me-1"></i>Açıklama zorunludur.</div>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Teknisyen</label>
+                        <select class="form-select" @bind="_record.AssignedTechnician">
+                            <option value="">— Atanmadı —</option>
+                            <option>Kadir Usta</option>
+                            <option>Murat Teknisyen</option>
+                            <option>Serkan Boyacı</option>
+                        </select>
+                    </div>
+
+                    <!-- Maliyet -->
+                    <div class="form-section-title mt-4"><i class="bi bi-cash-stack me-2"></i>Maliyet</div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Tahmini Maliyet (₺)</label>
+                        <div class="input-group">
+                            <span class="input-group-text" style="border:1.5px solid var(--border-color); background:#f8fafc">₺</span>
+                            <input class="form-control" type="number" step="50" placeholder="0" @bind="_record.EstimatedCost" />
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end mt-4">
+                        <a href="/service-records" class="btn btn-light-sm">İptal</a>
+                        <button type="submit" class="btn btn-accent">
+                            <i class="bi bi-check-lg me-1"></i> Kaydet
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="col-12 col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-info-circle me-2 text-accent"></i>Bilgi</h6>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">Adım 1</div>
+                        <div class="timeline-text fw-600">Araç ve hasar bilgilerini girin</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Adım 2</div>
+                        <div class="timeline-text fw-600">Kayıt açıldıktan sonra fotoğraf ekleyin</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Adım 3</div>
+                        <div class="timeline-text fw-600">Durumu onarım sürecinde güncelleyin</div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">Adım 4</div>
+                        <div class="timeline-text fw-600">Tamamlandığında fatura oluşturun</div>
+                    </div>
+                </div>
+
+                <div class="mt-4 p-3 rounded-3" style="background:var(--accent-dim); border:1px solid rgba(234,100,36,0.2)">
+                    <div class="fs-12 fw-600 text-accent mb-1"><i class="bi bi-lightbulb me-1"></i>İpucu</div>
+                    <div class="fs-12">Yeni araç için önce <a href="/vehicles/create">Araç Ekle</a> sayfasını kullanın.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private ServiceRecord _record = new();
+    private List<Vehicle> _vehicles = new();
+    private bool _submitted = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _vehicles = await Store.GetVehiclesAsync();
+    }
+
+    private async Task HandleSubmit()
+    {
+        _submitted = true;
+        if (_record.VehicleId == 0 || string.IsNullOrWhiteSpace(_record.DamageDescription))
+            return;
+
+        var created = await Store.AddServiceRecordAsync(_record);
+        Nav.NavigateTo($"/service-records/{created.Id}");
+    }
+}

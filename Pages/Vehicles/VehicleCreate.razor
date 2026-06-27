@@ -1,0 +1,171 @@
+@page "/vehicles/create"
+@inject JsonDataStore Store
+@inject NavigationManager Nav
+
+<PageTitle>Yeni Araç — Ascar Servis</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Yeni Araç Ekle</h1>
+        <p class="page-subtitle">Sisteme yeni araç kaydı oluşturun</p>
+    </div>
+    <a href="/vehicles" class="btn btn-light-sm"><i class="bi bi-arrow-left me-1"></i> Geri</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-12 col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <EditForm Model="_vehicle" OnValidSubmit="HandleSubmit">
+
+                    <div class="form-section-title"><i class="bi bi-person me-2"></i>Araç Sahibi</div>
+
+                    @if (_customers.Count == 0)
+                    {
+                        <div class="alert alert-warning d-flex gap-2 mb-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <span>Müşteri bulunamadı. <a href="/customers/create">Önce müşteri ekleyin.</a></span>
+                        </div>
+                    }
+
+                    <div class="mb-3">
+                        <label class="form-label">Müşteri <span class="text-danger">*</span></label>
+                        <select class="form-select" @bind="_vehicle.CustomerId">
+                            <option value="0">— Müşteri Seçin —</option>
+                            @foreach (var c in _customers)
+                            {
+                                <option value="@c.Id">@c.FullName — @c.Phone</option>
+                            }
+                        </select>
+                        @if (_submitted && _vehicle.CustomerId == 0)
+                        {
+                            <div class="text-danger fs-12 mt-1">Müşteri seçimi zorunludur.</div>
+                        }
+                    </div>
+
+                    <div class="form-section-title mt-4"><i class="bi bi-car-front me-2"></i>Araç Bilgileri</div>
+
+                    <div class="row g-3">
+                        <div class="col-sm-6">
+                            <label class="form-label">Plaka <span class="text-danger">*</span></label>
+                            <input class="form-control" placeholder="34 AKL 123" @bind="_vehicle.Plate"
+                                   style="text-transform:uppercase; font-family:monospace; font-weight:700" />
+                            @if (_submitted && string.IsNullOrWhiteSpace(_vehicle.Plate))
+                            {
+                                <div class="text-danger fs-12 mt-1">Plaka zorunludur.</div>
+                            }
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Şasi No (VIN)</label>
+                            <input class="form-control" placeholder="Opsiyonel" @bind="_vehicle.Vin" />
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Marka <span class="text-danger">*</span></label>
+                            <select class="form-select" @bind="_vehicle.Brand">
+                                <option value="">— Seçin —</option>
+                                @foreach (var b in Brands)
+                                {
+                                    <option>@b</option>
+                                }
+                            </select>
+                            @if (_submitted && string.IsNullOrWhiteSpace(_vehicle.Brand))
+                            {
+                                <div class="text-danger fs-12 mt-1">Marka zorunludur.</div>
+                            }
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Model <span class="text-danger">*</span></label>
+                            <input class="form-control" placeholder="Corolla, Focus, Clio..." @bind="_vehicle.Model" />
+                            @if (_submitted && string.IsNullOrWhiteSpace(_vehicle.Model))
+                            {
+                                <div class="text-danger fs-12 mt-1">Model zorunludur.</div>
+                            }
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Yıl <span class="text-danger">*</span></label>
+                            <input class="form-control" type="number" min="1990" max="2025" placeholder="2020" @bind="_vehicle.Year" />
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Renk</label>
+                            <select class="form-select" @bind="_vehicle.Color">
+                                <option value="">— Seçin —</option>
+                                <option>Beyaz</option><option>Siyah</option><option>Gri</option>
+                                <option>Gümüş</option><option>Mavi</option><option>Kırmızı</option>
+                                <option>Lacivert</option><option>Yeşil</option><option>Sarı</option><option>Diğer</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-4">
+                            <label class="form-label">Yakıt</label>
+                            <select class="form-select" @bind="_vehicle.FuelType">
+                                <option value="">— Seçin —</option>
+                                <option>Benzin</option><option>Dizel</option><option>LPG</option>
+                                <option>Hybrid</option><option>Elektrik</option>
+                            </select>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label">Vites</label>
+                            <select class="form-select" @bind="_vehicle.TransmissionType">
+                                <option value="">— Seçin —</option>
+                                <option>Manuel</option><option>Otomatik</option><option>Yarı Otomatik</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2 justify-content-end mt-4">
+                        <a href="/vehicles" class="btn btn-light-sm">İptal</a>
+                        <button type="submit" class="btn btn-accent">
+                            <i class="bi bi-check-lg me-1"></i> Aracı Kaydet
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-person-plus me-2 text-accent"></i>Müşteri Yok mu?</h6>
+            </div>
+            <div class="card-body">
+                <p class="fs-13 text-muted">Aracı sisteme eklemek için önce müşteri kaydı oluşturmanız gerekir.</p>
+                <a href="/customers/create" class="btn btn-accent btn-sm w-100">
+                    <i class="bi bi-person-plus me-1"></i> Yeni Müşteri Ekle
+                </a>
+                <div class="divider"></div>
+                <a href="/customers" class="btn btn-light-sm w-100">
+                    <i class="bi bi-people me-1"></i> Müşteri Listesi
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private Vehicle _vehicle = new() { Year = DateTime.Now.Year };
+    private List<Customer> _customers = new();
+    private bool _submitted = false;
+
+    private static readonly string[] Brands =
+    {
+        "Toyota","Ford","Renault","Volkswagen","Fiat","Honda","Hyundai","Opel","Peugeot",
+        "Citroën","Nissan","Kia","Dacia","Mercedes","BMW","Audi","Seat","Skoda","Volvo","Mazda","Diğer"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        _customers = await Store.GetCustomersAsync();
+    }
+
+    private async Task HandleSubmit()
+    {
+        _submitted = true;
+        if (_vehicle.CustomerId == 0 || string.IsNullOrWhiteSpace(_vehicle.Plate) ||
+            string.IsNullOrWhiteSpace(_vehicle.Brand) || string.IsNullOrWhiteSpace(_vehicle.Model))
+            return;
+
+        _vehicle.Plate = _vehicle.Plate.ToUpperInvariant().Trim();
+        var created = await Store.AddVehicleAsync(_vehicle);
+        Nav.NavigateTo($"/vehicles/{created.Id}");
+    }
+}

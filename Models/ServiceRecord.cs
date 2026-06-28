@@ -35,10 +35,17 @@ public class ServiceRecord
     public decimal EstimatedCost { get; set; }
     public decimal? FinalCost { get; set; }
 
-    // Insurance
+    // Insurance & damage location
     public bool HasInsurance { get; set; }
-    public string? InsuranceCompany { get; set; }
-    public string? InsurancePolicyNo { get; set; }
+    public string? InsuranceCompany { get; set; }   // Sigorta Ünvanı
+    public string? InsurancePolicyNo { get; set; }  // Sigorta Poliçe Numarası
+    public string? FileNumber { get; set; }          // Dosya Numarası
+    public DateTime? DamageDateTime { get; set; }   // Hasar Tarihi ve Saati
+    public string? DamageCity { get; set; }          // Hasar Yeri İl
+    public string? DamageDistrict { get; set; }      // Hasar Yeri İlçe
+    public string? DriverName { get; set; }          // Sürücü İsim Soyisim
+    public string? DriverNationalId { get; set; }    // Sürücü TC
+    public string? ExpertInfo { get; set; }          // Eksper Bilgisi
 
     // Damage items
     public List<DamageItem> DamageItems { get; set; } = new();

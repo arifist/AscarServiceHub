@@ -1,0 +1,115 @@
+@inherits LayoutComponentBase
+@inject NavigationManager Nav
+
+<HeadContent>
+    <link rel="stylesheet" href="/css/public.css" />
+</HeadContent>
+
+<nav class="pub-navbar" id="pubNav">
+    <div class="container-xl">
+        <div class="pub-nav-inner">
+            <a href="/" class="pub-logo">
+                <img src="/images/logo.jpg" alt="Ascar" />
+                <div class="pub-logo-text">
+                    <span class="pub-logo-name"><span class="pub-logo-as">AS</span>CAR</span>
+                    <span class="pub-logo-sub">Oto Kaporta &amp; Boya</span>
+                </div>
+            </a>
+            <div class="pub-nav-links" id="pubNavLinks">
+                <a href="/" class="pub-nav-link @(IsActive("/", exact: true))">Ana Sayfa</a>
+                <a href="/hakkimizda" class="pub-nav-link @(IsActive("/hakkimizda"))">Hakkımızda</a>
+                <a href="/hizmetler" class="pub-nav-link @(IsActive("/hizmetler"))">Hizmetler</a>
+                <a href="/iletisim" class="pub-nav-link @(IsActive("/iletisim"))">İletişim</a>
+                <a href="/arac-sorgula" class="pub-nav-cta @(IsActive("/arac-sorgula"))">
+                    <i class="bi bi-search me-1"></i>Araç Sorgula
+                </a>
+            </div>
+            <button class="pub-hamburger" onclick="document.getElementById('pubNavLinks').classList.toggle('open')">
+                <i class="bi bi-list"></i>
+            </button>
+        </div>
+    </div>
+</nav>
+
+<main>
+    @Body
+</main>
+
+<a href="tel:05000000000" class="pub-float-cta">
+    <i class="bi bi-telephone-fill"></i>
+    <span class="pub-float-cta-text">Hemen Ara</span>
+</a>
+
+<footer class="pub-footer">
+    <div class="container-xl">
+        <div class="pub-footer-grid">
+            <div class="pub-footer-brand">
+                <img src="/images/logo.jpg" alt="Ascar" class="pub-footer-logo" />
+                <div style="font-size:20px; font-weight:800; color:#fff; letter-spacing:2px; margin-bottom:8px;"><span class="pub-logo-as">AS</span>CAR</div>
+                <p>İstanbul Ümraniye'de profesyonel oto kaporta ve boya hizmetleri ile aracınıza yeniden hayat veriyoruz. 15+ yıllık deneyim, sigorta iş ortaklığı.</p>
+                <div class="pub-social">
+                    <a href="#" class="pub-social-btn"><i class="bi bi-instagram"></i></a>
+                    <a href="#" class="pub-social-btn"><i class="bi bi-facebook"></i></a>
+                    <a href="#" class="pub-social-btn"><i class="bi bi-whatsapp"></i></a>
+                    <a href="#" class="pub-social-btn"><i class="bi bi-youtube"></i></a>
+                </div>
+            </div>
+            <div class="pub-footer-col">
+                <div class="pub-footer-title">Hizmetlerimiz</div>
+                <a href="/hizmetler">Kaporta Tamiri</a>
+                <a href="/hizmetler">Oto Boya</a>
+                <a href="/hizmetler">Boyasız Göçük (PDR)</a>
+                <a href="/hizmetler">Sigorta İşlemleri</a>
+                <a href="/hizmetler">Detaylı Temizlik</a>
+            </div>
+            <div class="pub-footer-col">
+                <div class="pub-footer-title">Hızlı Erişim</div>
+                <a href="/">Ana Sayfa</a>
+                <a href="/hakkimizda">Hakkımızda</a>
+                <a href="/arac-sorgula">Araç Durumu Sorgula</a>
+                <a href="/iletisim">İletişim</a>
+                <a href="/giris">Yönetici Girişi</a>
+            </div>
+            <div class="pub-footer-col">
+                <div class="pub-footer-title">İletişim</div>
+                <div class="pub-footer-contact"><i class="bi bi-geo-alt"></i><span>Ümraniye Sanayi, İstanbul</span></div>
+                <div class="pub-footer-contact"><i class="bi bi-telephone"></i><span>0332 XXX XX XX</span></div>
+                <div class="pub-footer-contact"><i class="bi bi-envelope"></i><span>info@ascarservis.com</span></div>
+                <div class="pub-footer-contact"><i class="bi bi-clock"></i><span>Hft–Cmt: 08:00–18:00</span></div>
+            </div>
+        </div>
+        <div class="pub-footer-bottom">
+            <span>© @DateTime.Now.Year Ascar Oto Kaporta &amp; Boya — Tüm Hakları Saklıdır.</span>
+            <span>Güvenli Yönetim için <a href="/giris">Giriş Yap</a></span>
+        </div>
+    </div>
+</footer>
+
+<script>
+    (function () {
+        function initScrollNav() {
+            window.addEventListener('scroll', function () {
+                var nav = document.getElementById('pubNav');
+                if (nav) nav.classList.toggle('scrolled', window.scrollY > 50);
+            });
+        }
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initScrollNav);
+        } else {
+            initScrollNav();
+        }
+    })();
+</script>
+
+@code {
+    private string IsActive(string path, bool exact = false)
+    {
+        var uri = new Uri(Nav.Uri);
+        var currentPath = uri.AbsolutePath.TrimEnd('/');
+        var comparePath = path.TrimEnd('/');
+        if (exact)
+            return string.Equals(currentPath, comparePath, StringComparison.OrdinalIgnoreCase) ||
+                   (string.IsNullOrEmpty(currentPath) && string.IsNullOrEmpty(comparePath)) ? "active" : "";
+        return currentPath.StartsWith(comparePath, StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(comparePath) ? "active" : "";
+    }
+}

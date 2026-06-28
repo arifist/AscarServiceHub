@@ -1,4 +1,5 @@
 @page "/customers/create"
+@attribute [Authorize]
 @inject JsonDataStore Store
 @inject NavigationManager Nav
 
@@ -46,6 +47,10 @@
                     <div class="col-12">
                         <label class="form-label">Adres</label>
                         <textarea class="form-control" rows="2" placeholder="Müşteri adresi (opsiyonel)" @bind="_customer.Address"></textarea>
+                    </div>
+                    <div class="col-sm-6">
+                        <label class="form-label">TC Kimlik No</label>
+                        <input class="form-control" placeholder="12345678901" maxlength="11" @bind="_customer.NationalId" />
                     </div>
                     <div class="col-sm-6">
                         <label class="form-label">Vergi Numarası</label>

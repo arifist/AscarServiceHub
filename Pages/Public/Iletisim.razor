@@ -1,0 +1,251 @@
+@page "/iletisim"
+@layout PublicLayout
+
+<PageTitle>İletişim — Ascar Oto Kaporta & Boya</PageTitle>
+
+<!-- ─── HERO ─────────────────────────────────────────────────── -->
+<section style="padding:140px 0 80px; background:linear-gradient(135deg, var(--pub-dark) 0%, #001a40 100%); position:relative; overflow:hidden;">
+    <div style="position:absolute; width:600px; height:600px; border-radius:50%; border:1px solid rgba(0,102,204,0.15); top:-200px; right:-200px;"></div>
+    <div style="position:absolute; width:400px; height:400px; border-radius:50%; background:rgba(0,102,204,0.05); bottom:-150px; left:-100px;"></div>
+
+    <div class="container-xl text-center" style="position:relative;">
+        <div class="section-tag" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.8); border:1px solid rgba(255,255,255,0.12); display:inline-flex; margin:0 auto 20px;">
+            <i class="bi bi-envelope"></i> İletişim
+        </div>
+        <h1 style="font-size:clamp(36px,5vw,60px); font-weight:900; color:#fff; margin-bottom:20px; line-height:1.1;">
+            Size Nasıl<br/><span style="color:#60a5fa;">Yardımcı Olabiliriz?</span>
+        </h1>
+        <p style="font-size:18px; color:rgba(255,255,255,0.6); max-width:520px; margin:0 auto 48px;">
+            Ücretsiz hasar tespiti, fiyat teklifi veya herhangi bir konuda bizimle iletişime geçin. Haftanın 6 günü, 08:00–18:00 saatleri arasında hizmetinizdeyiz.
+        </p>
+
+        <!-- Quick Contact -->
+        <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+            <a href="tel:03320000000" style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12); color:#fff; padding:14px 24px; border-radius:12px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:10px; font-size:15px; transition:all 0.2s;" onmouseover="this.style.background='var(--pub-blue)';" onmouseout="this.style.background='rgba(255,255,255,0.08)';">
+                <i class="bi bi-telephone-fill" style="color:#60a5fa;"></i> 0332 000 00 00
+            </a>
+            <a href="https://wa.me/905000000000" style="background:rgba(37,211,102,0.15); border:1px solid rgba(37,211,102,0.3); color:#fff; padding:14px 24px; border-radius:12px; font-weight:600; text-decoration:none; display:inline-flex; align-items:center; gap:10px; font-size:15px; transition:all 0.2s;" onmouseover="this.style.background='rgba(37,211,102,0.3)';" onmouseout="this.style.background='rgba(37,211,102,0.15)';">
+                <i class="bi bi-whatsapp" style="color:#25d366;"></i> WhatsApp
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ─── CONTACT CONTENT ────────────────────────────────────────── -->
+<section style="padding:80px 0; background:#f8faff;">
+    <div class="container-xl">
+        <div class="row g-5">
+
+            <!-- Contact Info -->
+            <div class="col-12 col-lg-4">
+                <h2 style="font-size:24px; font-weight:800; margin-bottom:8px; color:var(--pub-dark2);">İletişim Bilgileri</h2>
+                <p style="color:var(--pub-gray); font-size:14px; margin-bottom:32px; line-height:1.7;">Bizi arayabilir, ofisimize uğrayabilir veya aşağıdaki formu doldurabilirsiniz.</p>
+
+                @foreach (var info in _contactInfos)
+                {
+                    <div style="display:flex; gap:16px; align-items:flex-start; margin-bottom:28px;">
+                        <div style="width:48px; height:48px; border-radius:12px; background:var(--pub-blue-light); color:var(--pub-blue); display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0;">
+                            <i class="bi @info.Icon"></i>
+                        </div>
+                        <div>
+                            <div style="font-size:12px; font-weight:700; color:var(--pub-gray); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">@info.Label</div>
+                            <div style="font-size:15px; font-weight:600; color:var(--pub-dark2);">@info.Value</div>
+                            @if (!string.IsNullOrEmpty(info.Sub))
+                            {
+                                <div style="font-size:13px; color:var(--pub-gray); margin-top:2px;">@info.Sub</div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Social -->
+                <div style="margin-top:32px; padding-top:32px; border-top:1px solid var(--pub-border);">
+                    <div style="font-size:13px; font-weight:700; color:var(--pub-gray); text-transform:uppercase; letter-spacing:1px; margin-bottom:16px;">Sosyal Medya</div>
+                    <div style="display:flex; gap:10px;">
+                        <a href="#" style="width:40px; height:40px; border-radius:10px; background:var(--pub-blue-light); color:var(--pub-blue); display:flex; align-items:center; justify-content:center; font-size:18px; text-decoration:none; transition:all 0.2s;" onmouseover="this.style.background='var(--pub-blue)';this.style.color='#fff';" onmouseout="this.style.background='var(--pub-blue-light)';this.style.color='var(--pub-blue)';">
+                            <i class="bi bi-instagram"></i>
+                        </a>
+                        <a href="#" style="width:40px; height:40px; border-radius:10px; background:var(--pub-blue-light); color:var(--pub-blue); display:flex; align-items:center; justify-content:center; font-size:18px; text-decoration:none; transition:all 0.2s;" onmouseover="this.style.background='var(--pub-blue)';this.style.color='#fff';" onmouseout="this.style.background='var(--pub-blue-light)';this.style.color='var(--pub-blue)';">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="#" style="width:40px; height:40px; border-radius:10px; background:#d1fae5; color:#065f46; display:flex; align-items:center; justify-content:center; font-size:18px; text-decoration:none; transition:all 0.2s;" onmouseover="this.style.background='#10b981';this.style.color='#fff';" onmouseout="this.style.background='#d1fae5';this.style.color='#065f46';">
+                            <i class="bi bi-whatsapp"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact Form -->
+            <div class="col-12 col-lg-8">
+                <div style="background:#fff; border-radius:24px; padding:48px; box-shadow:0 8px 40px rgba(0,0,0,0.08); border:1px solid var(--pub-border);">
+                    @if (_sent)
+                    {
+                        <div style="text-align:center; padding:40px 0;">
+                            <div style="width:72px; height:72px; border-radius:50%; background:#d1fae5; color:#065f46; display:flex; align-items:center; justify-content:center; font-size:32px; margin:0 auto 20px;">
+                                <i class="bi bi-check-lg"></i>
+                            </div>
+                            <h3 style="font-size:22px; font-weight:800; margin-bottom:8px; color:var(--pub-dark2);">Mesajınız İletildi!</h3>
+                            <p style="color:var(--pub-gray); font-size:15px; margin-bottom:28px; line-height:1.7;">
+                                En kısa sürede sizinle iletişime geçeceğiz. Genellikle 2-4 saat içinde yanıt veriyoruz.
+                            </p>
+                            <button @onclick="@(() => _sent = false)"
+                                    style="background:var(--pub-blue); color:#fff; border:none; border-radius:10px; padding:12px 28px; font-weight:700; cursor:pointer; font-size:15px;">
+                                Yeni Mesaj Gönder
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <h3 style="font-size:22px; font-weight:800; margin-bottom:8px; color:var(--pub-dark2);">Bize Yazın</h3>
+                        <p style="color:var(--pub-gray); font-size:14px; margin-bottom:32px;">* ile işaretli alanlar zorunludur.</p>
+
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label style="display:block; font-size:13px; font-weight:700; color:var(--pub-dark2); margin-bottom:8px;">Ad Soyad *</label>
+                                <input @bind="_form.Name" placeholder="Ahmet Yılmaz"
+                                       style="width:100%; background:#f8faff; border:1.5px solid @(_submitted && string.IsNullOrWhiteSpace(_form.Name) ? "#ef4444" : "var(--pub-border)"); border-radius:10px; padding:12px 16px; font-size:15px; outline:none; transition:border 0.2s; font-family:'Inter',sans-serif; color:var(--pub-dark2);" />
+                                @if (_submitted && string.IsNullOrWhiteSpace(_form.Name))
+                                { <div style="color:#ef4444; font-size:12px; margin-top:4px;">Ad soyad zorunludur.</div> }
+                            </div>
+                            <div class="col-sm-6">
+                                <label style="display:block; font-size:13px; font-weight:700; color:var(--pub-dark2); margin-bottom:8px;">Telefon *</label>
+                                <input @bind="_form.Phone" placeholder="0532 111 22 33" type="tel"
+                                       style="width:100%; background:#f8faff; border:1.5px solid @(_submitted && string.IsNullOrWhiteSpace(_form.Phone) ? "#ef4444" : "var(--pub-border)"); border-radius:10px; padding:12px 16px; font-size:15px; outline:none; transition:border 0.2s; font-family:'Inter',sans-serif; color:var(--pub-dark2);" />
+                                @if (_submitted && string.IsNullOrWhiteSpace(_form.Phone))
+                                { <div style="color:#ef4444; font-size:12px; margin-top:4px;">Telefon zorunludur.</div> }
+                            </div>
+                            <div class="col-sm-6">
+                                <label style="display:block; font-size:13px; font-weight:700; color:var(--pub-dark2); margin-bottom:8px;">E-posta</label>
+                                <input @bind="_form.Email" placeholder="ornek@email.com" type="email"
+                                       style="width:100%; background:#f8faff; border:1.5px solid var(--pub-border); border-radius:10px; padding:12px 16px; font-size:15px; outline:none; font-family:'Inter',sans-serif; color:var(--pub-dark2);" />
+                            </div>
+                            <div class="col-sm-6">
+                                <label style="display:block; font-size:13px; font-weight:700; color:var(--pub-dark2); margin-bottom:8px;">Konu</label>
+                                <select @bind="_form.Subject"
+                                        style="width:100%; background:#f8faff; border:1.5px solid var(--pub-border); border-radius:10px; padding:12px 16px; font-size:15px; outline:none; font-family:'Inter',sans-serif; color:var(--pub-dark2);">
+                                    <option value="">Konu seçin...</option>
+                                    <option>Fiyat Teklifi</option>
+                                    <option>Sigorta Danışmanlığı</option>
+                                    <option>Randevu</option>
+                                    <option>Araç Takip</option>
+                                    <option>Diğer</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label style="display:block; font-size:13px; font-weight:700; color:var(--pub-dark2); margin-bottom:8px;">Mesajınız *</label>
+                                <textarea @bind="_form.Message" rows="5" placeholder="Aracınız ve hasarı hakkında detaylı bilgi verin..."
+                                          style="width:100%; background:#f8faff; border:1.5px solid @(_submitted && string.IsNullOrWhiteSpace(_form.Message) ? "#ef4444" : "var(--pub-border)"); border-radius:10px; padding:12px 16px; font-size:15px; outline:none; resize:vertical; font-family:'Inter',sans-serif; color:var(--pub-dark2);"></textarea>
+                                @if (_submitted && string.IsNullOrWhiteSpace(_form.Message))
+                                { <div style="color:#ef4444; font-size:12px; margin-top:4px;">Mesaj zorunludur.</div> }
+                            </div>
+                            <div class="col-12">
+                                <button @onclick="Submit"
+                                        style="background:var(--pub-blue); color:#fff; border:none; border-radius:12px; padding:14px 32px; font-weight:700; cursor:pointer; font-size:15px; display:flex; align-items:center; gap:8px; transition:all 0.2s;"
+                                        onmouseover="this.style.background='var(--pub-blue-dark)';" onmouseout="this.style.background='var(--pub-blue)';">
+                                    <i class="bi bi-send-fill"></i> Mesaj Gönder
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── MAP ────────────────────────────────────────────────────── -->
+<section style="height:420px; position:relative; overflow:hidden; background:var(--pub-dark2);">
+    <!-- İstanbul Boğaz fotoğrafı -->
+    <div style="position:absolute; inset:0; background-image:url('https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=1600&q=80&auto=format&fit=crop'); background-size:cover; background-position:center;"></div>
+    <!-- Koyu overlay -->
+    <div style="position:absolute; inset:0; background:linear-gradient(135deg, rgba(10,15,30,0.82) 0%, rgba(0,40,100,0.65) 100%);"></div>
+
+    <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:16px; padding:24px;">
+        <div style="width:68px; height:68px; border-radius:50%; background:var(--pub-blue); display:flex; align-items:center; justify-content:center; font-size:30px; color:#fff; box-shadow:0 0 0 14px rgba(0,102,204,0.2);">
+            <i class="bi bi-geo-alt-fill"></i>
+        </div>
+        <div style="text-align:center; color:#fff;">
+            <div style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:rgba(255,255,255,0.55); margin-bottom:8px;">Konumumuz</div>
+            <div style="font-size:24px; font-weight:900; margin-bottom:6px; line-height:1.2;">Ümraniye Sanayi<br/><span style="color:#60a5fa;">İstanbul</span></div>
+            <div style="font-size:14px; color:rgba(255,255,255,0.6);">Konum için tıklayın</div>
+        </div>
+        <a href="https://maps.google.com/?q=Umraniye+Sanayi+Istanbul" target="_blank"
+           class="pub-btn pub-btn-primary" style="margin-top:4px;">
+            <i class="bi bi-map"></i> Google Maps'te Aç
+        </a>
+    </div>
+</section>
+
+<!-- ─── WORKING HOURS ─────────────────────────────────────────── -->
+<section style="padding:64px 0; background:#fff; border-top:1px solid var(--pub-border);">
+    <div class="container-xl">
+        <div class="row g-4 align-items-center">
+            <div class="col-12 col-md-4 text-center text-md-start">
+                <h3 style="font-size:22px; font-weight:800; margin-bottom:8px;">Çalışma Saatleri</h3>
+                <p style="color:var(--pub-gray); font-size:14px; margin:0;">Randevu almadan da gelebilirsiniz.</p>
+            </div>
+            <div class="col-12 col-md-8">
+                <div class="row g-3">
+                    @foreach (var h in _hours)
+                    {
+                        <div class="col-12 col-sm-6 col-lg-4">
+                            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-radius:10px; background:@(h.Open ? "var(--pub-blue-light)" : "#f3f4f6"); border:1px solid @(h.Open ? "rgba(0,102,204,0.2)" : "transparent");">
+                                <span style="font-size:14px; font-weight:600; color:var(--pub-dark2);">@h.Day</span>
+                                <span style="font-size:13px; font-weight:700; color:@(h.Open ? "var(--pub-blue)" : "var(--pub-gray)");">@h.Time</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@code {
+    private class ContactForm
+    {
+        public string Name { get; set; } = "";
+        public string Phone { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Subject { get; set; } = "";
+        public string Message { get; set; } = "";
+    }
+
+    private ContactForm _form = new();
+    private bool _submitted = false;
+    private bool _sent = false;
+
+    private record ContactInfo(string Icon, string Label, string Value, string Sub);
+    private readonly ContactInfo[] _contactInfos =
+    [
+        new("bi-geo-alt-fill", "Adres", "Ümraniye Sanayi, İstanbul", "İstanbul, Türkiye"),
+        new("bi-telephone-fill", "Telefon", "0332 000 00 00", "Hft–Cmt: 08:00–18:00"),
+        new("bi-envelope-fill", "E-posta", "info@ascarservis.com", "24 saat içinde yanıt"),
+        new("bi-clock-fill", "Çalışma Saatleri", "Hft–Cmt: 08:00–18:00", "Pazar: Kapalı"),
+    ];
+
+    private record WorkingHour(string Day, string Time, bool Open);
+    private readonly WorkingHour[] _hours =
+    [
+        new("Pazartesi", "08:00 – 18:00", true),
+        new("Salı", "08:00 – 18:00", true),
+        new("Çarşamba", "08:00 – 18:00", true),
+        new("Perşembe", "08:00 – 18:00", true),
+        new("Cuma", "08:00 – 18:00", true),
+        new("Cumartesi", "09:00 – 15:00", true),
+        new("Pazar", "Kapalı", false),
+    ];
+
+    private void Submit()
+    {
+        _submitted = true;
+        if (string.IsNullOrWhiteSpace(_form.Name) ||
+            string.IsNullOrWhiteSpace(_form.Phone) ||
+            string.IsNullOrWhiteSpace(_form.Message))
+            return;
+
+        _sent = true;
+        _form = new();
+        _submitted = false;
+    }
+}

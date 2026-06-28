@@ -1,4 +1,5 @@
 @page "/service-records/{Id:int}"
+@attribute [Authorize]
 @inject JsonDataStore Store
 @inject NavigationManager Nav
 @inject IJSRuntime JS
@@ -435,18 +436,116 @@ else
                 <div class="card mb-3" style="border-color:#a7f3d0">
                     <div class="card-header" style="background:#f0fdf4">
                         <div class="card-title" style="color:#065f46"><i class="bi bi-shield-check"></i> Sigorta Bilgisi</div>
+                        @if (!_editingInsurance)
+                        {
+                            <button class="btn btn-light-sm btn-sm" @onclick="@(() => _editingInsurance = true)">
+                                <i class="bi bi-pencil me-1"></i> Düzenle
+                            </button>
+                        }
                     </div>
                     <div class="card-body p-0">
-                        <div class="px-4">
-                            <div class="info-row">
-                                <div class="info-label">Sigorta Şirketi</div>
-                                <div class="info-value fw-600">@(_record.InsuranceCompany ?? "—")</div>
+                        @if (_editingInsurance)
+                        {
+                            <div class="px-4 py-3">
+                                <div class="row g-3">
+                                    <div class="col-sm-6">
+                                        <label class="form-label fs-12">Sigorta Ünvanı</label>
+                                        <input class="form-control form-control-sm" @bind="_record.InsuranceCompany" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fs-12">Sigorta Poliçe Numarası</label>
+                                        <input class="form-control form-control-sm" @bind="_record.InsurancePolicyNo" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fs-12">Dosya Numarası</label>
+                                        <input class="form-control form-control-sm" @bind="_record.FileNumber" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fs-12">Hasar Tarihi ve Saati</label>
+                                        <input class="form-control form-control-sm" type="datetime-local" @bind="_record.DamageDateTime" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fs-12">Hasar Yeri İl</label>
+                                        <input class="form-control form-control-sm" @bind="_record.DamageCity" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fs-12">Hasar Yeri İlçe</label>
+                                        <input class="form-control form-control-sm" @bind="_record.DamageDistrict" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fs-12">Sürücü İsim Soyisim</label>
+                                        <input class="form-control form-control-sm" @bind="_record.DriverName" />
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label fs-12">Sürücü TC Kimlik No</label>
+                                        <input class="form-control form-control-sm" maxlength="11" @bind="_record.DriverNationalId" />
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fs-12">Eksper Bilgisi</label>
+                                        <input class="form-control form-control-sm" placeholder="Ad, firma, telefon..." @bind="_record.ExpertInfo" />
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2 mt-3">
+                                    <button class="btn btn-primary btn-sm" @onclick="SaveRecord"><i class="bi bi-check-lg me-1"></i> Kaydet</button>
+                                    <button class="btn btn-light-sm" @onclick="@(() => _editingInsurance = false)">İptal</button>
+                                </div>
                             </div>
-                            <div class="info-row">
-                                <div class="info-label">Poliçe No</div>
-                                <div class="info-value" style="font-family:monospace;font-size:12px">@(_record.InsurancePolicyNo ?? "—")</div>
+                        }
+                        else
+                        {
+                            <div class="px-4">
+                                <div class="info-row">
+                                    <div class="info-label">Sigorta Ünvanı</div>
+                                    <div class="info-value fw-600">@(_record.InsuranceCompany ?? "—")</div>
+                                </div>
+                                <div class="info-row">
+                                    <div class="info-label">Poliçe No</div>
+                                    <div class="info-value" style="font-family:monospace;font-size:12px">@(_record.InsurancePolicyNo ?? "—")</div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(_record.FileNumber))
+                                {
+                                    <div class="info-row">
+                                        <div class="info-label">Dosya No</div>
+                                        <div class="info-value" style="font-family:monospace;font-size:12px">@_record.FileNumber</div>
+                                    </div>
+                                }
+                                @if (_record.DamageDateTime.HasValue)
+                                {
+                                    <div class="info-row">
+                                        <div class="info-label">Hasar Tarihi</div>
+                                        <div class="info-value">@_record.DamageDateTime.Value.ToString("dd.MM.yyyy HH:mm")</div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(_record.DamageCity) || !string.IsNullOrEmpty(_record.DamageDistrict))
+                                {
+                                    <div class="info-row">
+                                        <div class="info-label">Hasar Yeri</div>
+                                        <div class="info-value">@(_record.DamageDistrict ?? "") @(!string.IsNullOrEmpty(_record.DamageCity) && !string.IsNullOrEmpty(_record.DamageDistrict) ? "/ " : "")@(_record.DamageCity ?? "")</div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(_record.DriverName))
+                                {
+                                    <div class="info-row">
+                                        <div class="info-label">Sürücü</div>
+                                        <div class="info-value">@_record.DriverName</div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(_record.DriverNationalId))
+                                {
+                                    <div class="info-row">
+                                        <div class="info-label">Sürücü TC</div>
+                                        <div class="info-value" style="font-family:monospace;font-size:12px">@_record.DriverNationalId</div>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(_record.ExpertInfo))
+                                {
+                                    <div class="info-row">
+                                        <div class="info-label">Eksper</div>
+                                        <div class="info-value">@_record.ExpertInfo</div>
+                                    </div>
+                                }
                             </div>
-                        </div>
+                        }
                     </div>
                 </div>
             }
@@ -484,6 +583,7 @@ else
     private bool _editingComplaint = false;
     private bool _editingDamage = false;
     private bool _editingWork = false;
+    private bool _editingInsurance = false;
     private bool _uploading = false;
     private string _selectedArea = "";
 
@@ -498,6 +598,7 @@ else
         _editingComplaint = false;
         _editingDamage = false;
         _editingWork = false;
+        _editingInsurance = false;
         await LoadRecord();
     }
 

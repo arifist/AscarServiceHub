@@ -1,0 +1,270 @@
+@page "/hakkimizda"
+@layout PublicLayout
+
+<PageTitle>Hakkımızda — Ascar Oto Kaporta & Boya</PageTitle>
+
+<!-- ─── HERO ─────────────────────────────────────────────────── -->
+<section class="pub-page-hero">
+    <div class="pub-page-hero-bg" style="background-image:url('https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1600&q=80&auto=format&fit=crop');"></div>
+    <div class="pub-page-hero-overlay"></div>
+    <div class="container-xl pub-page-hero-content text-center">
+        <div class="section-tag" style="background:rgba(255,255,255,0.12); color:#fff; border:1px solid rgba(255,255,255,0.2); display:inline-flex; margin:0 auto 20px;">
+            <i class="bi bi-building"></i> Hakkımızda
+        </div>
+        <h1 style="font-size:clamp(36px,5vw,64px); font-weight:900; color:#fff; margin-bottom:20px; line-height:1.1;">
+            Kaporta ve Boyada<br/><span style="color:#60a5fa;">Güven ve Kalite</span>
+        </h1>
+        <p style="font-size:18px; color:rgba(255,255,255,0.7); max-width:560px; margin:0 auto; line-height:1.7;">
+            2009'dan bu yana İstanbul Ümraniye'de profesyonel kaporta ve boya hizmetleri sunuyoruz. Her araç, her müşteri bizim için özel.
+        </p>
+    </div>
+</section>
+
+<!-- ─── HIKAYE ─────────────────────────────────────────────────── -->
+<section style="padding:100px 0; background:#fff;">
+    <div class="container-xl">
+        <div class="row align-items-center g-5">
+            <div class="col-12 col-lg-6">
+                <div class="section-tag"><i class="bi bi-book"></i> Hikayemiz</div>
+                <h2 class="section-title">2009'dan Bugüne<br/><span>Kesintisiz Kalite</span></h2>
+                <p style="font-size:16px; color:var(--pub-gray); line-height:1.9; margin-bottom:20px;">
+                    Ascar Oto Kaporta & Boya, 2009 yılında İstanbul Ümraniye'de küçük bir atölye olarak yola çıktı. Kurucu ortaklarımızın sektöre olan tutkusu ve müşteri odaklı yaklaşımı, kısa sürede bölgenin en güvenilir servislerinden biri olmamızı sağladı.
+                </p>
+                <p style="font-size:16px; color:var(--pub-gray); line-height:1.9; margin-bottom:32px;">
+                    Bugün 1200 m² kapalı alanda, son teknoloji ekipmanlar ve 8 kişilik uzman kadromuzla yılda 500'den fazla araca hizmet veriyoruz. Her işlemde orijinal malzeme kullanımı ve çevre dostu boyalar bizim vazgeçilmezlerimiz.
+                </p>
+
+                <div class="row g-4">
+                    @foreach (var s in _storyStats)
+                    {
+                        <div class="col-6">
+                            <div style="border-left:3px solid var(--pub-blue); padding-left:16px;">
+                                <div style="font-size:36px; font-weight:900; color:var(--pub-blue); line-height:1;">@s.Value</div>
+                                <div style="font-size:13px; color:var(--pub-gray); margin-top:4px;">@s.Label</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+            <div class="col-12 col-lg-6">
+                <div style="position:relative;">
+                    <div style="border-radius:24px; overflow:hidden; height:480px; box-shadow:0 30px 80px rgba(0,0,0,0.15);">
+                        <img src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=900&q=80&auto=format&fit=crop"
+                             alt="Ascar Servis Atölye" style="width:100%; height:100%; object-fit:cover;" />
+                    </div>
+                    <!-- Floating badge -->
+                    <div style="position:absolute; top:-20px; right:-20px; background:var(--pub-blue); color:#fff; border-radius:16px; padding:20px 24px; text-align:center; box-shadow:0 8px 32px rgba(0,102,204,0.4);">
+                        <div style="font-size:32px; font-weight:900; line-height:1;">15+</div>
+                        <div style="font-size:12px; opacity:0.85; margin-top:4px;">Yıllık<br/>Deneyim</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── DEĞERLER ───────────────────────────────────────────────── -->
+<section style="padding:100px 0; background:var(--pub-dark2); position:relative; overflow:hidden;">
+    <div style="position:absolute; inset:0; background:radial-gradient(ellipse at 30% 50%, rgba(0,102,204,0.2) 0%, transparent 60%);"></div>
+    <div class="container-xl" style="position:relative;">
+        <div class="text-center mb-5">
+            <div class="section-tag" style="background:rgba(255,255,255,0.08); color:rgba(255,255,255,0.8); border:1px solid rgba(255,255,255,0.12);">
+                <i class="bi bi-gem"></i> Değerlerimiz
+            </div>
+            <h2 class="section-title section-title-white">Bizi Biz Yapan <span style="color:#60a5fa;">Değerler</span></h2>
+            <p class="section-lead section-lead-white mx-auto" style="max-width:500px;">
+                Her adımda bu ilkelere bağlı kalarak çalışıyor, hizmet anlayışımızı bu temel üzerine inşa ediyoruz.
+            </p>
+        </div>
+
+        <div class="row g-4">
+            @foreach (var (val, idx) in _values.Select((v, i) => (v, i)))
+            {
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:20px; padding:36px 28px; height:100%; transition:all 0.3s; position:relative; overflow:hidden;" onmouseover="this.style.background='rgba(0,102,204,0.15)';this.style.borderColor='rgba(0,102,204,0.4)';" onmouseout="this.style.background='rgba(255,255,255,0.04)';this.style.borderColor='rgba(255,255,255,0.08)';">
+                        <div style="font-size:56px; font-weight:900; color:rgba(255,255,255,0.04); position:absolute; top:16px; right:20px; line-height:1; font-family:serif;">0@(idx+1)</div>
+                        <div style="width:52px; height:52px; border-radius:14px; background:rgba(0,102,204,0.3); color:#60a5fa; display:flex; align-items:center; justify-content:center; font-size:22px; margin-bottom:20px;">
+                            <i class="bi @val.Icon"></i>
+                        </div>
+                        <h3 style="font-size:17px; font-weight:700; color:#fff; margin-bottom:10px;">@val.Title</h3>
+                        <p style="font-size:14px; color:rgba(255,255,255,0.55); line-height:1.7; margin:0;">@val.Text</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ─── TİMELİNE ──────────────────────────────────────────────── -->
+<section style="padding:100px 0; background:#f8faff;">
+    <div class="container-xl">
+        <div class="text-center mb-5">
+            <div class="section-tag"><i class="bi bi-clock-history"></i> Tarihçe</div>
+            <h2 class="section-title">Büyüme <span>Yolculuğumuz</span></h2>
+        </div>
+
+        <div style="max-width:720px; margin:0 auto; position:relative; padding-left:32px;">
+            <div style="position:absolute; left:12px; top:0; bottom:0; width:2px; background:linear-gradient(to bottom, var(--pub-blue), rgba(0,102,204,0.1));"></div>
+
+            @foreach (var (m, idx) in _milestones.Select((x, i) => (x, i)))
+            {
+                <div style="position:relative; margin-bottom:40px; display:flex; gap:24px; align-items:flex-start;">
+                    <div style="position:absolute; left:-32px; width:24px; height:24px; border-radius:50%; background:var(--pub-blue); border:4px solid #f8faff; display:flex; align-items:center; justify-content:center; top:4px; flex-shrink:0;">
+                        <div style="width:6px; height:6px; background:#fff; border-radius:50%;"></div>
+                    </div>
+                    <div style="background:#fff; border-radius:16px; padding:24px 28px; border:1px solid var(--pub-border); box-shadow:0 2px 12px rgba(0,0,0,0.04); flex:1;">
+                        <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px; flex-wrap:wrap;">
+                            <span style="background:var(--pub-blue); color:#fff; font-weight:800; font-size:13px; padding:4px 12px; border-radius:99px;">@m.Year</span>
+                            <span style="font-weight:700; font-size:15px; color:var(--pub-dark2);">@m.Title</span>
+                        </div>
+                        <p style="font-size:14px; color:var(--pub-gray); line-height:1.7; margin:0;">@m.Text</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ─── ATÖLYE FOTOĞRAFLARI ──────────────────────────────────────── -->
+<section style="padding:100px 0; background:#fff;">
+    <div class="container-xl">
+        <div class="text-center mb-5">
+            <div class="section-tag"><i class="bi bi-building"></i> Tesisimiz</div>
+            <h2 class="section-title">Modern <span>Atölyemiz</span></h2>
+            <p class="section-lead mx-auto text-center">1200 m² kapalı alanda son teknoloji ekipmanlarla donatılmış profesyonel servis ortamı.</p>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-8">
+                <div style="border-radius:20px; overflow:hidden; height:380px; position:relative; box-shadow:0 16px 48px rgba(0,0,0,0.12);">
+                    <img src="https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?w=1200&q=80&auto=format&fit=crop" alt="Ascar Atölye Ana Salon" style="width:100%; height:100%; object-fit:cover;" />
+                    <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(10,15,30,0.5) 0%, transparent 60%);"></div>
+                    <div style="position:absolute; bottom:20px; left:24px; color:#fff;">
+                        <div style="font-weight:800; font-size:16px;">Ana Onarım Salonu</div>
+                        <div style="font-size:13px; opacity:0.7;">1200 m² kapalı alan</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-4">
+                <div class="row g-3 h-100">
+                    <div class="col-12">
+                        <div style="border-radius:20px; overflow:hidden; height:183px; position:relative; box-shadow:0 8px 24px rgba(0,0,0,0.1);">
+                            <img src="https://images.unsplash.com/photo-1530046339160-ce3e530c7d2f?w=600&q=80&auto=format&fit=crop" alt="Boya Kabini" style="width:100%; height:100%; object-fit:cover;" />
+                            <div style="position:absolute; bottom:12px; left:16px; color:#fff; font-size:13px; font-weight:700; text-shadow:0 2px 8px rgba(0,0,0,0.6);">Boya Kabini</div>
+                        </div>
+                    </div>
+                    <div class="col-12">
+                        <div style="border-radius:20px; overflow:hidden; height:183px; position:relative; box-shadow:0 8px 24px rgba(0,0,0,0.1);">
+                            <img src="https://images.unsplash.com/photo-1605559424843-9073c6e1b7a8?w=600&q=80&auto=format&fit=crop" alt="Detay Bölümü" style="width:100%; height:100%; object-fit:cover;" />
+                            <div style="position:absolute; bottom:12px; left:16px; color:#fff; font-size:13px; font-weight:700; text-shadow:0 2px 8px rgba(0,0,0,0.6);">Detay Bölümü</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-3">
+            <div class="col-12 col-sm-4">
+                <div style="border-radius:20px; overflow:hidden; height:220px; box-shadow:0 8px 24px rgba(0,0,0,0.1);">
+                    <img src="https://images.unsplash.com/photo-1545262810-a01a7db3b005?w=600&q=80&auto=format&fit=crop" alt="Kaporta Bölümü" style="width:100%; height:100%; object-fit:cover;" />
+                </div>
+            </div>
+            <div class="col-12 col-sm-4">
+                <div style="border-radius:20px; overflow:hidden; height:220px; box-shadow:0 8px 24px rgba(0,0,0,0.1);">
+                    <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&q=80&auto=format&fit=crop" alt="PDR Bölümü" style="width:100%; height:100%; object-fit:cover;" />
+                </div>
+            </div>
+            <div class="col-12 col-sm-4">
+                <div style="border-radius:20px; overflow:hidden; height:220px; box-shadow:0 8px 24px rgba(0,0,0,0.1);">
+                    <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=600&q=80&auto=format&fit=crop" alt="Teslim Bölümü" style="width:100%; height:100%; object-fit:cover;" />
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─── EKİP ───────────────────────────────────────────────────── -->
+<section style="padding:100px 0; background:#f8faff;">
+    <div class="container-xl">
+        <div class="text-center mb-5">
+            <div class="section-tag"><i class="bi bi-people"></i> Ekibimiz</div>
+            <h2 class="section-title">Uzman <span>Kadromuz</span></h2>
+            <p class="section-lead mx-auto" style="text-align:center; max-width:480px;">Her biri alanında uzmanlaşmış teknisyenlerimiz, aracınıza fabrika kalitesinde servis sağlar.</p>
+        </div>
+
+        <div class="row g-4 justify-content-center">
+            @foreach (var m in _team)
+            {
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div style="background:#fff; border-radius:20px; padding:32px 24px; text-align:center; border:1px solid var(--pub-border); box-shadow:0 4px 20px rgba(0,0,0,0.06); transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-4px)';this.style.boxShadow='0 12px 36px rgba(0,0,0,0.1)';" onmouseout="this.style.transform='';this.style.boxShadow='0 4px 20px rgba(0,0,0,0.06)';">
+                        <div style="width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg, var(--pub-blue), #0047a3); color:#fff; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:900; margin:0 auto 16px; border:4px solid var(--pub-blue-light); box-shadow:0 4px 16px rgba(0,102,204,0.3);">
+                            @m.Initial
+                        </div>
+                        <div style="font-weight:800; font-size:16px; margin-bottom:4px; color:var(--pub-dark2);">@m.Name</div>
+                        <div style="font-size:13px; color:var(--pub-gray); margin-bottom:12px;">@m.Role</div>
+                        <div style="display:inline-flex; align-items:center; gap:4px; background:var(--pub-blue-light); color:var(--pub-blue); font-size:11px; font-weight:700; padding:5px 12px; border-radius:99px;">
+                            <i class="bi bi-award-fill"></i> @m.Experience deneyim
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<!-- ─── CTA ────────────────────────────────────────────────────── -->
+<section style="padding:80px 0; background:linear-gradient(135deg, var(--pub-blue) 0%, #0047a3 100%);">
+    <div class="container-xl text-center">
+        <h2 style="font-size:clamp(28px,4vw,44px); font-weight:800; color:#fff; margin-bottom:16px;">Aracınız İçin Randevu Alın</h2>
+        <p style="font-size:17px; color:rgba(255,255,255,0.7); margin-bottom:32px;">Ücretsiz hasar tespiti ve fiyat teklifi için bugün bizimle iletişime geçin.</p>
+        <div style="display:flex; gap:16px; justify-content:center; flex-wrap:wrap;">
+            <a href="/iletisim" class="pub-btn pub-btn-outline">
+                <i class="bi bi-envelope"></i> İletişim Formu
+            </a>
+            <a href="tel:03320000000" class="pub-btn" style="background:#fff; color:var(--pub-blue);">
+                <i class="bi bi-telephone-fill"></i> Hemen Ara
+            </a>
+        </div>
+    </div>
+</section>
+
+@code {
+    private record StoryStat(string Value, string Label);
+    private record Value(string Icon, string Title, string Text);
+    private record Milestone(string Year, string Title, string Text);
+    private record TeamMember(string Initial, string Name, string Role, string Experience);
+
+    private readonly StoryStat[] _storyStats =
+    [
+        new("+2500", "Tamamlanan Onarım"),
+        new("1200 m²", "Kapalı Çalışma Alanı"),
+        new("8", "Uzman Teknisyen"),
+        new("+50", "Sigorta Anlaşması"),
+    ];
+
+    private readonly Value[] _values =
+    [
+        new("bi-award", "Kalite Önce", "Her işlemde orijinal malzeme ve OEM standartlarına uygun süreçler kullanıyoruz. Compromisesiz kalite."),
+        new("bi-shield-check", "Şeffaf Süreç", "Fiyat, süre ve işlem adımları konusunda tam şeffaflık. Online takip ile anlık bilgilendirme."),
+        new("bi-person-heart", "Müşteri Odaklı", "Sorununuz çözülene kadar yanınızdayız. Teslim sonrası destek ve garanti hizmetimiz kesintisiz."),
+        new("bi-lightning-charge", "Hızlı Çözüm", "PDR, spot boya ve küçük hasarlar için aynı gün, büyük onarımlar için optimum süre garantisi."),
+    ];
+
+    private readonly Milestone[] _milestones =
+    [
+        new("2009", "Kuruluş", "300 m² küçük atölyeyle yola çıktık. İlk yılımızda 120 aracı onardık."),
+        new("2012", "Büyüme", "Ekibimizi 4 teknisyene çıkardık, ilk sigorta anlaşmalarını imzaladık."),
+        new("2016", "Yeni Atölye", "1200 m² yeni tesisimize taşındık. PDR ekipmanları ve boya kabini yatırımı yaptık."),
+        new("2019", "Dijital Dönüşüm", "Online araç takip sistemi hayata geçirildi. 500+ müşteri kayıtlı kullanıcı oldu."),
+        new("2022", "Sertifikasyon", "ISO 9001:2015 Kalite Yönetim Sistemi sertifikası alındı."),
+        new("2025", "Bugün", "Yılda 500+ araç, 8 teknisyen, +50 sigorta şirketi iş ortaklığı ile hizmet veriyoruz."),
+    ];
+
+    private readonly TeamMember[] _team =
+    [
+        new("A", "Ali Demir", "Kaporta Ustası", "12 yıl"),
+        new("M", "Mustafa Kaya", "Boya Uzmanı", "10 yıl"),
+        new("E", "Emre Şahin", "PDR Teknisyeni", "7 yıl"),
+        new("Y", "Yusuf Arslan", "Sigorta Koordinatörü", "8 yıl"),
+    ];
+}

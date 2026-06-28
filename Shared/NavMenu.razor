@@ -1,7 +1,7 @@
 <div class="sidebar" id="sidebar">
     <div class="sidebar-brand">
         <div class="brand-logo">
-            <i class="bi bi-wrench-adjustable"></i>
+            <img src="/images/logo.jpg" alt="Ascar" style="width:36px;height:36px;border-radius:50%;object-fit:cover;" />
         </div>
         <div class="brand-text">
             <span class="brand-name">ASCAR</span>
@@ -10,17 +10,16 @@
     </div>
 
     <nav class="sidebar-nav">
-        <!-- CTA -->
         <NavLink class="nav-item nav-cta" href="/intake">
             <i class="bi bi-plus-lg"></i>
-            <span>Araç Kabulü</span>
+            <span>Yeni Araç Kabulü</span>
         </NavLink>
 
         <div class="nav-section-label" style="margin-top:6px">GENEL BAKIŞ</div>
 
-        <NavLink class="nav-item" href="/" Match="NavLinkMatch.All">
+        <NavLink class="nav-item" href="/panel" Match="NavLinkMatch.All">
             <i class="bi bi-speedometer2"></i>
-            <span>Panel</span>
+            <span>Ana Panel</span>
         </NavLink>
 
         <NavLink class="nav-item" href="/workshop">
@@ -28,7 +27,7 @@
             <span>Atölye Durumu</span>
         </NavLink>
 
-        <div class="nav-section-label">SERVİS</div>
+        <div class="nav-section-label">AKTİF İŞLER</div>
 
         <NavLink class="nav-item" href="/service-records">
             <i class="bi bi-clipboard2-check"></i>
@@ -44,11 +43,23 @@
             <i class="bi bi-people"></i>
             <span>Müşteriler</span>
         </NavLink>
+
+        <div class="nav-section-label">GEÇMİŞ & ANALİZ</div>
+
+        <NavLink class="nav-item" href="/gecmis-islemler">
+            <i class="bi bi-clock-history"></i>
+            <span>Geçmiş İşlemler</span>
+        </NavLink>
+
+        <NavLink class="nav-item" href="/performans">
+            <i class="bi bi-bar-chart-line-fill"></i>
+            <span>Performans Analizi</span>
+        </NavLink>
     </nav>
 
     <div class="sidebar-footer">
         <i class="bi bi-shield-check text-success"></i>
         <span>Sistem Aktif</span>
-        <span class="sidebar-version">v2.0</span>
+        <span class="sidebar-version">v2.1</span>
     </div>
 </div>

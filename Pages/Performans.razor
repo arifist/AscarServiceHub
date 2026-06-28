@@ -1,0 +1,405 @@
+@page "/performans"
+@attribute [Authorize]
+@inject JsonDataStore Store
+
+<PageTitle>Performans Analizi — Ascar Servis</PageTitle>
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Performans Analizi</h1>
+        <p class="page-subtitle">İş istatistikleri, ciro ve servis performansı</p>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <span class="fs-12 text-muted">
+            <i class="bi bi-calendar3 me-1"></i>
+            @DateTime.Now.ToString("MMMM yyyy", new System.Globalization.CultureInfo("tr-TR"))
+        </span>
+    </div>
+</div>
+
+@if (!_loaded)
+{
+    <div class="loading-spinner"><div class="spinner-border text-accent" role="status"></div></div>
+}
+else
+{
+    <!-- KPI Stat Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-xl-3">
+            <div class="stat-card si-blue">
+                <div class="stat-card-top">
+                    <div>
+                        <div class="stat-card-value">@_thisMonthCount</div>
+                        <div class="stat-card-label">Bu Ay Tamamlanan</div>
+                    </div>
+                    <div class="stat-card-icon"><i class="bi bi-check2-circle"></i></div>
+                </div>
+                <div class="stat-card-sub">
+                    @{ var cd = _thisMonthCount - _lastMonthCount; }
+                    <i class="bi @(cd >= 0 ? "bi-arrow-up-circle text-success" : "bi-arrow-down-circle text-danger")"></i>
+                    <span>Geçen ay: @_lastMonthCount (@(cd >= 0 ? "+" : "")@cd)</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card si-green">
+                <div class="stat-card-top">
+                    <div>
+                        <div class="stat-card-value" style="font-size:20px">@_thisMonthRevenue.ToString("N0") ₺</div>
+                        <div class="stat-card-label">Bu Ay Ciro</div>
+                    </div>
+                    <div class="stat-card-icon"><i class="bi bi-wallet2"></i></div>
+                </div>
+                <div class="stat-card-sub">
+                    @{ var rd = _thisMonthRevenue - _lastMonthRevenue; }
+                    <i class="bi @(rd >= 0 ? "bi-arrow-up-circle text-success" : "bi-arrow-down-circle text-danger")"></i>
+                    <span>Geçen ay: @_lastMonthRevenue.ToString("N0") ₺</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card si-teal">
+                <div class="stat-card-top">
+                    <div>
+                        <div class="stat-card-value">@(_avgServiceDays > 0 ? _avgServiceDays.ToString("F1") : "—")</div>
+                        <div class="stat-card-label">Ort. Servis Süresi (Gün)</div>
+                    </div>
+                    <div class="stat-card-icon"><i class="bi bi-stopwatch-fill"></i></div>
+                </div>
+                <div class="stat-card-sub">
+                    <i class="bi bi-info-circle"></i>
+                    <span>Teslim edilen işler baz alınır</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-xl-3">
+            <div class="stat-card si-amber">
+                <div class="stat-card-top">
+                    <div>
+                        <div class="stat-card-value" style="font-size:20px">@_totalRevenue.ToString("N0") ₺</div>
+                        <div class="stat-card-label">Toplam Ciro</div>
+                    </div>
+                    <div class="stat-card-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                </div>
+                <div class="stat-card-sub">
+                    <i class="bi bi-check-circle"></i>
+                    <span>@_totalCompleted tamamlanan iş</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <!-- Monthly Job Count Chart (CSS-based) -->
+        <div class="col-12 col-lg-8">
+            <div class="card h-100">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-bar-chart-fill text-accent"></i> Aylık İş Sayısı</div>
+                    <span class="fs-12 text-muted">Son 6 ay</span>
+                </div>
+                <div class="card-body">
+                    @{
+                        var maxJobC = _monthlyStats.Count > 0 ? _monthlyStats.Max(m => m.Count) : 1;
+                        if (maxJobC == 0) maxJobC = 1;
+                    }
+                    <div style="display:flex; align-items:flex-end; gap:8px; height:170px; padding:0 8px 0 4px; border-left:2px solid var(--border-light); border-bottom:2px solid var(--border-light); position:relative;">
+                        @foreach (var m in _monthlyStats)
+                        {
+                            var pct = m.Count * 100 / maxJobC;
+                            <div style="display:flex; flex-direction:column; align-items:center; flex:1; height:100%; justify-content:flex-end;">
+                                <span style="font-size:11px; font-weight:700; color:var(--accent); margin-bottom:3px; min-height:16px;">@(m.Count > 0 ? m.Count.ToString() : "")</span>
+                                <div style="width:100%; background:linear-gradient(to top, #2563eb, #60a5fa); border-radius:4px 4px 0 0; height:@pct%; min-height:@(m.Count > 0 ? "3px" : "0"); transition:height 0.4s ease;"></div>
+                                <span style="font-size:11px; color:#94a3b8; margin-top:6px; text-align:center; white-space:nowrap;">@m.Label</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Distribution Donut -->
+        <div class="col-12 col-lg-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-pie-chart-fill text-accent"></i> Durum Dağılımı</div>
+                </div>
+                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                    @{
+                        var dtotal = _statusStats.Sum(s => s.Count);
+                        const double dCx = 80; const double dCy = 80; const double dR = 58; const double dSw = 22;
+                        var dCircumf = 2 * Math.PI * dR;
+                    }
+                    @if (dtotal == 0)
+                    {
+                        <div class="empty-state-text">Veri yok</div>
+                    }
+                    else
+                    {
+                        <div style="position:relative; width:160px; height:160px; flex-shrink:0;">
+                            <svg width="160" height="160" style="position:absolute; top:0; left:0; transform:rotate(-90deg);">
+                                @{
+                                    double cumOff = 0;
+                                    var ic = System.Globalization.CultureInfo.InvariantCulture;
+                                    foreach (var s in _statusStats)
+                                    {
+                                        var dashLen = dCircumf * s.Count / dtotal;
+                                        var remain = dCircumf - dashLen;
+                                        var dashOffset = dCircumf - dCircumf * cumOff / dtotal;
+                                        var da = $"{dashLen.ToString("F2", ic)} {remain.ToString("F2", ic)}";
+                                        var doff = dashOffset.ToString("F2", ic);
+                                        <circle cx="@dCx.ToString("F0", ic)" cy="@dCy.ToString("F0", ic)" r="@dR.ToString("F0", ic)"
+                                                fill="none" stroke="@s.Color" stroke-width="@dSw.ToString("F0", ic)"
+                                                stroke-dasharray="@da" stroke-dashoffset="@doff" />
+                                        cumOff += s.Count;
+                                    }
+                                }
+                            </svg>
+                            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; pointer-events:none;">
+                                <div style="font-size:22px; font-weight:800; color:var(--text-primary); line-height:1.1;">@dtotal</div>
+                                <div style="font-size:10px; color:#94a3b8; margin-top:2px;">toplam iş</div>
+                            </div>
+                        </div>
+                        <div style="margin-top:16px; width:100%;">
+                            @foreach (var s in _statusStats)
+                            {
+                                <div style="display:flex; align-items:center; gap:8px; padding:5px 0;">
+                                    <div style="width:10px; height:10px; border-radius:50%; background:@s.Color; flex-shrink:0;"></div>
+                                    <span class="fs-13" style="flex:1;">@s.Label</span>
+                                    <span class="fw-700 fs-13" style="color:@s.Color">@s.Count</span>
+                                    <span class="fs-12 text-muted">%@(dtotal > 0 ? s.Count * 100 / dtotal : 0)</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <!-- Monthly Revenue Chart (CSS-based) -->
+        <div class="col-12 col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-currency-exchange text-accent"></i> Aylık Ciro</div>
+                    <span class="fs-12 text-muted">Son 6 ay (₺)</span>
+                </div>
+                <div class="card-body">
+                    @{
+                        var maxRevD = _monthlyStats.Count > 0 ? (double)_monthlyStats.Max(m => m.Revenue) : 1;
+                        if (maxRevD == 0) maxRevD = 1;
+                    }
+                    <div style="display:flex; align-items:flex-end; gap:8px; height:170px; padding:0 8px 0 4px; border-left:2px solid var(--border-light); border-bottom:2px solid var(--border-light);">
+                        @foreach (var m in _monthlyStats)
+                        {
+                            var pct = m.Revenue > 0 ? (int)((double)m.Revenue * 100 / maxRevD) : 0;
+                            var revLabel = m.Revenue >= 1000 ? $"{m.Revenue / 1000:F0}k" : m.Revenue.ToString("F0");
+                            <div style="display:flex; flex-direction:column; align-items:center; flex:1; height:100%; justify-content:flex-end;">
+                                <span style="font-size:11px; font-weight:700; color:#059669; margin-bottom:3px; min-height:16px;">@(m.Revenue > 0 ? revLabel : "")</span>
+                                <div style="width:100%; background:linear-gradient(to top, #059669, #34d399); border-radius:4px 4px 0 0; height:@pct%; min-height:@(m.Revenue > 0 ? "3px" : "0"); transition:height 0.4s ease;"></div>
+                                <span style="font-size:11px; color:#94a3b8; margin-top:6px; text-align:center; white-space:nowrap;">@m.Label</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technician Performance -->
+        <div class="col-12 col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-person-badge text-accent"></i> Teknisyen Performansı</div>
+                </div>
+                <div class="card-body" style="padding:12px 16px;">
+                    @if (_techStats.Count == 0)
+                    {
+                        <div class="empty-state-text text-center py-4">Teknisyen atanmış kayıt yok</div>
+                    }
+                    else
+                    {
+                        var maxTech = _techStats.Max(t => t.Count);
+                        @foreach (var t in _techStats)
+                        {
+                            var tp = maxTech > 0 ? t.Count * 100 / maxTech : 0;
+                            <div style="padding:10px 0; border-bottom:1px solid var(--border-light);">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <div class="customer-avatar" style="width:28px;height:28px;font-size:11px;">@t.Name.Substring(0, 1)</div>
+                                        <span class="fw-600 fs-13">@t.Name</span>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="fw-700 fs-13" style="color:var(--accent)">@t.Count iş</span>
+                                        <div class="fs-12 text-muted">@t.Revenue.ToString("N0") ₺</div>
+                                    </div>
+                                </div>
+                                <div style="height:6px; background:var(--border-light); border-radius:3px; overflow:hidden;">
+                                    <div style="width:@tp%; height:100%; background:var(--accent); border-radius:3px; transition:width 0.5s;"></div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Priority Distribution -->
+        <div class="col-12 col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-exclamation-diamond text-accent"></i> Öncelik Dağılımı</div>
+                </div>
+                <div class="card-body" style="padding:12px 16px;">
+                    @{
+                        var totalPrio = _priorityStats.Sum(p => p.Count);
+                    }
+                    @foreach (var p in _priorityStats)
+                    {
+                        var pp = totalPrio > 0 ? p.Count * 100 / totalPrio : 0;
+                        <div style="padding:10px 0; border-bottom:1px solid var(--border-light);">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                                <span class="fw-600 fs-13 @p.BadgeClass">@p.Label</span>
+                                <span class="fs-12 text-muted">@p.Count kayıt · %@pp</span>
+                            </div>
+                            <div style="height:6px; background:var(--border-light); border-radius:3px; overflow:hidden;">
+                                <div style="width:@pp%; height:100%; background:@p.Color; border-radius:3px;"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Summary -->
+        <div class="col-12 col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-title"><i class="bi bi-lightning-fill text-accent"></i> Hızlı Özet</div>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        @foreach (var s in _quickSummary)
+                        {
+                            <div class="col-6 col-sm-4">
+                                <div style="background:var(--surface); border-radius:12px; padding:14px 16px; border:1px solid var(--border-light);">
+                                    <div style="font-size:22px; font-weight:800; color:var(--text-primary);">@s.Value</div>
+                                    <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">@s.Label</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _loaded = false;
+    private int _thisMonthCount, _lastMonthCount, _totalCompleted;
+    private decimal _thisMonthRevenue, _lastMonthRevenue, _totalRevenue;
+    private double _avgServiceDays;
+
+    private record MonthStat(string Label, int Count, decimal Revenue);
+    private record TechStat(string Name, int Count, decimal Revenue);
+    private record StatusStat(string Label, int Count, string Color);
+    private record PriorityStat(string Label, int Count, string Color, string BadgeClass);
+    private record QuickStat(string Label, string Value);
+
+    private List<MonthStat> _monthlyStats = new();
+    private List<TechStat> _techStats = new();
+    private List<StatusStat> _statusStats = new();
+    private List<PriorityStat> _priorityStats = new();
+    private List<QuickStat> _quickSummary = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await Store.GetServiceRecordsAsync();
+        var now = DateTime.Now;
+        var thisMonthStart = new DateTime(now.Year, now.Month, 1);
+        var lastMonthStart = thisMonthStart.AddMonths(-1);
+
+        var completed = all.Where(r => r.Status == ServiceStatus.Delivered || r.Status == ServiceStatus.Completed).ToList();
+        _totalCompleted = completed.Count;
+        _totalRevenue = completed.Where(r => r.FinalCost.HasValue).Sum(r => r.FinalCost!.Value);
+
+        _thisMonthCount = completed.Count(r => r.EntryDate >= thisMonthStart);
+        _lastMonthCount = completed.Count(r => r.EntryDate >= lastMonthStart && r.EntryDate < thisMonthStart);
+
+        _thisMonthRevenue = completed
+            .Where(r => r.EntryDate >= thisMonthStart && r.FinalCost.HasValue)
+            .Sum(r => r.FinalCost!.Value);
+        _lastMonthRevenue = completed
+            .Where(r => r.EntryDate >= lastMonthStart && r.EntryDate < thisMonthStart && r.FinalCost.HasValue)
+            .Sum(r => r.FinalCost!.Value);
+
+        var withExit = completed.Where(r => r.ExitDate.HasValue).ToList();
+        _avgServiceDays = withExit.Any()
+            ? withExit.Average(r => (r.ExitDate!.Value - r.EntryDate).TotalDays)
+            : 0;
+
+        // Monthly stats — last 6 months by entry date
+        var tr = new System.Globalization.CultureInfo("tr-TR");
+        _monthlyStats = Enumerable.Range(0, 6)
+            .Select(i =>
+            {
+                var m = thisMonthStart.AddMonths(-5 + i);
+                var mEnd = m.AddMonths(1);
+                var recs = all.Where(r => r.EntryDate >= m && r.EntryDate < mEnd).ToList();
+                return new MonthStat(
+                    m.ToString("MMM", tr),
+                    recs.Count,
+                    recs.Where(r => r.FinalCost.HasValue).Sum(r => r.FinalCost!.Value));
+            })
+            .ToList();
+
+        // Technician stats
+        _techStats = all
+            .Where(r => !string.IsNullOrEmpty(r.AssignedTechnician))
+            .GroupBy(r => r.AssignedTechnician!)
+            .Select(g => new TechStat(
+                g.Key, g.Count(),
+                g.Where(r => r.FinalCost.HasValue).Sum(r => r.FinalCost!.Value)))
+            .OrderByDescending(t => t.Count)
+            .ToList();
+
+        // Status distribution
+        _statusStats = new List<StatusStat>
+        {
+            new("Bekliyor",         all.Count(r => r.Status == ServiceStatus.Waiting),      "#f59e0b"),
+            new("İnceleniyor",      all.Count(r => r.Status == ServiceStatus.Diagnosing),   "#8b5cf6"),
+            new("Onarımda",         all.Count(r => r.Status == ServiceStatus.InProgress),   "#3b82f6"),
+            new("Parça Bekliyor",   all.Count(r => r.Status == ServiceStatus.WaitingParts), "#f97316"),
+            new("Tamamlandı",       all.Count(r => r.Status == ServiceStatus.Completed),    "#10b981"),
+            new("Teslim Edildi",    all.Count(r => r.Status == ServiceStatus.Delivered),    "#94a3b8"),
+        }.Where(s => s.Count > 0).ToList();
+
+        // Priority distribution
+        _priorityStats = new List<PriorityStat>
+        {
+            new("Acil",   all.Count(r => r.Priority == ServicePriority.Urgent), "#ef4444", "text-danger"),
+            new("Yüksek", all.Count(r => r.Priority == ServicePriority.High),   "#f59e0b", "text-warning"),
+            new("Normal", all.Count(r => r.Priority == ServicePriority.Normal), "#3b82f6", "text-accent"),
+            new("Düşük",  all.Count(r => r.Priority == ServicePriority.Low),    "#94a3b8", "text-muted"),
+        }.Where(p => p.Count > 0).ToList();
+
+        // Quick summary
+        var insCount = all.Count(r => r.HasInsurance);
+        var costsWithValue = completed.Where(r => r.FinalCost.HasValue).ToList();
+        var avgCost = costsWithValue.Any() ? costsWithValue.Average(r => r.FinalCost!.Value) : 0;
+        var activeCount = all.Count(r => r.Status != ServiceStatus.Delivered);
+        var urgentActive = all.Count(r => r.Priority == ServicePriority.Urgent && r.Status != ServiceStatus.Delivered);
+
+        _quickSummary = new List<QuickStat>
+        {
+            new("Toplam Kayıt",       all.Count.ToString()),
+            new("Aktif İş",           activeCount.ToString()),
+            new("Sigortalı Araç",     insCount.ToString()),
+            new("Ort. İş Maliyeti",   avgCost > 0 ? $"{avgCost:N0} ₺" : "—"),
+            new("Acil Aktif İş",      urgentActive.ToString()),
+            new("Toplam Tamamlanan",  _totalCompleted.ToString()),
+        };
+
+        _loaded = true;
+    }
+}

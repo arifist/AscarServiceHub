@@ -1,4 +1,5 @@
 @page "/customers"
+@attribute [Authorize]
 @inject JsonDataStore Store
 @inject NavigationManager Nav
 
@@ -103,6 +104,10 @@
                         <input class="form-control" @bind="_editing.Phone" />
                     </div>
                     <div class="mb-3">
+                        <label class="form-label">TC Kimlik No</label>
+                        <input class="form-control" maxlength="11" @bind="_editing.NationalId" />
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">E-posta</label>
                         <input class="form-control" @bind="_editing.Email" />
                     </div>
@@ -145,7 +150,7 @@
         {
             Id = c.Id, FullName = c.FullName, Phone = c.Phone,
             Email = c.Email, Address = c.Address, CompanyName = c.CompanyName,
-            TaxNumber = c.TaxNumber, CreatedAt = c.CreatedAt
+            TaxNumber = c.TaxNumber, NationalId = c.NationalId, CreatedAt = c.CreatedAt
         };
     }
 

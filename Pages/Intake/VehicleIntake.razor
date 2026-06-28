@@ -1,4 +1,5 @@
 @page "/intake"
+@attribute [Authorize]
 @inject JsonDataStore Store
 @inject NavigationManager Nav
 @inject IJSRuntime JS
@@ -110,6 +111,10 @@
                                 <input class="form-control" placeholder="0532 111 2233" @bind="_newCustomer.Phone" />
                                 @if (_step1Submitted && string.IsNullOrWhiteSpace(_newCustomer.Phone) && _selectedCustomer == null)
                                 { <div class="text-danger fs-12 mt-1">Zorunlu alan.</div> }
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">TC Kimlik No</label>
+                                <input class="form-control" placeholder="12345678901" maxlength="11" @bind="_newCustomer.NationalId" />
                             </div>
                             <div class="col-sm-6">
                                 <label class="form-label">E-posta</label>
@@ -352,17 +357,46 @@
                         {
                             <div class="row g-3">
                                 <div class="col-sm-6">
-                                    <label class="form-label">Sigorta Şirketi</label>
+                                    <label class="form-label">Sigorta Ünvanı</label>
                                     <select class="form-select" @bind="_record.InsuranceCompany">
                                         <option value="">— Seçin —</option>
-                                        <option>Allianz</option><option>AXA</option><option>Anadolu Sigorta</option>
-                                        <option>Güneş Sigorta</option><option>Mapfre</option><option>Sompo Sigorta</option>
-                                        <option>Unico Sigorta</option><option>Diğer</option>
+                                        <option>Allianz Sigorta</option><option>AXA Sigorta</option><option>Anadolu Sigorta</option>
+                                        <option>Güneş Sigorta</option><option>Mapfre Sigorta</option><option>Sompo Sigorta</option>
+                                        <option>Unico Sigorta</option><option>HDI Sigorta</option><option>Türk Nippon Sigorta</option>
+                                        <option>Ergo Sigorta</option><option>Diğer</option>
                                     </select>
                                 </div>
                                 <div class="col-sm-6">
-                                    <label class="form-label">Poliçe Numarası</label>
+                                    <label class="form-label">Sigorta Poliçe Numarası</label>
                                     <input class="form-control" placeholder="TR-2026-XXXXX" @bind="_record.InsurancePolicyNo" />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label">Dosya Numarası</label>
+                                    <input class="form-control" placeholder="Hasar dosya no" @bind="_record.FileNumber" />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label">Hasar Tarihi ve Saati</label>
+                                    <input class="form-control" type="datetime-local" @bind="_record.DamageDateTime" />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label">Hasar Yeri İl</label>
+                                    <input class="form-control" placeholder="İstanbul" @bind="_record.DamageCity" />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label">Hasar Yeri İlçe</label>
+                                    <input class="form-control" placeholder="Kadıköy" @bind="_record.DamageDistrict" />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label">Sürücü İsim Soyisim</label>
+                                    <input class="form-control" placeholder="Ahmet Yılmaz" @bind="_record.DriverName" />
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="form-label">Sürücü TC Kimlik No</label>
+                                    <input class="form-control" placeholder="12345678901" maxlength="11" @bind="_record.DriverNationalId" />
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Eksper Bilgisi</label>
+                                    <input class="form-control" placeholder="Eksper adı, firma, telefon..." @bind="_record.ExpertInfo" />
                                 </div>
                             </div>
                         }
